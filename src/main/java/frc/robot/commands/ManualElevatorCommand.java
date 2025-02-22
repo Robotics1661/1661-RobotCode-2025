@@ -23,7 +23,7 @@ public class ManualElevatorCommand extends Command {
         double control = m_directionInput.getAsDouble();
 
         if (Math.abs(control) > 0.1) {
-            m_elevator.moveRate(control * 0.1);
+            m_elevator.moveRate(control * 0.2);
         } else {
             m_elevator.stop();
         }

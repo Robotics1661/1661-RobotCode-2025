@@ -146,7 +146,7 @@ public class JoyXboxWrapper {
     public final BooleanButton
         CLIMB_UP = getXBox(XboxController::getYButton),
         CLIMB_DOWN = getXBox(XboxController::getAButton),
-        CLIMB_LOCK = getXBox(XboxController::getBButton),
+        CLIMB_LOCK = getXBox(XboxController::getBButton), // TEMP USED FOR ELEVATOR CALLIBRATION
         CLIMB_UNLOCK = getXBox(XboxController::getXButton)
     ;
 
@@ -154,12 +154,12 @@ public class JoyXboxWrapper {
     public final BooleanButton
         INTAKE_CORAL = getXBox(XboxController::getRightBumperButton),
         INTAKE_ALGAE = getXBox(XboxController::getLeftBumperButton),
-        DROP_ALGAE = getXBox(x -> x.getLeftTriggerAxis() > 0.75) // TODO is this the right direction to detect pressed?
+        DROP_ALGAE = getXBox(x -> x.getLeftTriggerAxis() > 0.75)
     ;
 
     // Elevator
     public final DoubleControl
-        ELEVATOR_CONTROL = getXBoxDouble(x -> x.getLeftY())
+        ELEVATOR_CONTROL = getXBoxDouble(x -> -x.getLeftY())
     ;
 
     // region soft disable

@@ -31,14 +31,17 @@ public class RobotContainer {
       m_elevator,
       m_combined_controller.ELEVATOR_CONTROL::get
     ));
+
+    m_combined_controller.CLIMB_LOCK.getTrigger().onTrue(new ElevatorCallibrationCommand(m_elevator));
   }
 
   public Command getInitCommand() {
-    if (m_elevator.isCallibrated()) {
-      return null;
-    } else {
-      return new ElevatorCallibrationCommand(m_elevator);
-    }
+    return null; // we aren't sure it's safe yet
+    // if (m_elevator.isCallibrated()) {
+    //   return null;
+    // } else {
+    //   return new ElevatorCallibrationCommand(m_elevator);
+    // }
   }
 
   /**
