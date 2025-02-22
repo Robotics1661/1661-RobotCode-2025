@@ -8,20 +8,16 @@ import com.ctre.phoenix6.Utils;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 
 public class JoyXboxWrapper {
     private final Optional<XboxController> m_xbox;
     private final Optional<Joystick> m_joystick; //flightstick
-    @SuppressWarnings("unused")
+
     private boolean m_soft_disabled;
-    @SuppressWarnings("unused")
     private final boolean m_auto_swap_mode = true; // If true, soft enable if twist is on +
 
     public JoyXboxWrapper(int xboxPort, int joystickPort) {
-        this(xboxPort, joystickPort, false);
-    }
-
-    public JoyXboxWrapper(int xboxPort, int joystickPort, boolean controllerMode) {
         if (Utils.isSimulation()) {
             m_xbox = Optional.empty();
             m_joystick = Optional.empty();
@@ -29,8 +25,10 @@ public class JoyXboxWrapper {
             m_xbox = Optional.of(new XboxController(xboxPort));
             m_joystick = Optional.of(new Joystick(joystickPort));
         }
-        m_soft_disabled = controllerMode;
+        m_soft_disabled = true;
     }
+
+    // region movement
 
     public double getLateralX() {
         if (Constants.DISABLE_SWERVE) return 0;
@@ -52,58 +50,142 @@ public class JoyXboxWrapper {
         );
     }
 
-    private boolean getFlightButton(int id) {
-        return isSoftDisabled()
-            ? false
-            : m_joystick.map(j -> j.getRawButton(id)).orElse(false);
+    // endregion movement
+
+    // region utils
+
+    private BooleanButton getFlightButton(int id) {
+        return new FlightButton(id);
     }
 
-    private boolean getXBox(Function<XboxController, Boolean> function) {
-        return isSoftDisabled()
-            ? false
-            : m_xbox.map(function).orElse(false);
+    private BooleanButton getXBox(Function<XboxController, Boolean> getter) {
+        return new XboxButton(getter);
     }
 
-    public boolean getElevatorUpButton() {
-        return getXBox(x -> x.getYButton());
+    private DoubleControl getXBoxDouble(Function<XboxController, Double> getter) {
+        return new XboxControl(getter);
     }
 
-    public boolean getElevatorDownButton() {
-        return getXBox(x -> x.getAButton());
+    public interface BooleanButton {
+        boolean get();
+
+        default Trigger getTrigger() {
+            return new Trigger(this::get);
+        }
     }
 
-    public boolean getZeroButton() {
-        return getFlightButton(7);
+    public interface DoubleControl {
+        double get();
     }
 
-    public boolean getBrakeButton() {
-        return getFlightButton(9);
+    private class FlightButton implements BooleanButton {
+        private final int m_id;
+
+        private FlightButton(int id) {
+            this.m_id = id;
+        }
+
+        @Override
+        public boolean get() {
+            return isSoftDisabled()
+                ? false
+                : m_joystick.map(j -> j.getRawButton(m_id)).orElse(false);
+        }
     }
 
-    public boolean getZeroButton180() {
-        return getFlightButton(10);
+    private class XboxButton implements BooleanButton {
+        private final Function<XboxController, Boolean> m_getter;
+
+        private XboxButton(Function<XboxController, Boolean> getter) {
+            this.m_getter = getter;
+        }
+
+        @Override
+        public boolean get() {
+            return isSoftDisabled()
+                ? false
+                : m_xbox.map(m_getter).orElse(false);
+        }
     }
 
-    public void softDisable() {
+    private class XboxControl implements DoubleControl {
+        private final Function<XboxController, Double> m_getter;
+
+        private XboxControl(Function<XboxController, Double> getter) {
+            this.m_getter = getter;
+        }
+
+        @Override
+        public double get() {
+            return isSoftDisabled()
+                ? 0.0
+                : m_xbox.map(m_getter).orElse(0.0);
+        }
+    }
+
+    // endregion utils
+
+    // Reef targeting buttons
+    public final BooleanButton
+        REEF_LEFT_L4 = getFlightButton(7),
+        REEF_RIGHT_L4 = getFlightButton(8),
+        REEF_LEFT_L3 = getFlightButton(9),
+        REEF_RIGHT_L3 = getFlightButton(10),
+        REEF_LEFT_L2 = getFlightButton(11),
+        REEF_RIGHT_L2 = getFlightButton(12)
+    ;
+
+    // Aux drive buttons
+    public final BooleanButton
+        X_BRAKE = getFlightButton(2),
+        ZERO_GYRO = getFlightButton(3),
+        ALIGN_TO_PROCESSOR = getFlightButton(4)
+    ;
+
+    // Climber buttons
+    public final BooleanButton
+        CLIMB_UP = getXBox(XboxController::getYButton),
+        CLIMB_DOWN = getXBox(XboxController::getAButton),
+        CLIMB_LOCK = getXBox(XboxController::getBButton),
+        CLIMB_UNLOCK = getXBox(XboxController::getXButton)
+    ;
+
+    // Intake/drop buttons
+    public final BooleanButton
+        INTAKE_CORAL = getXBox(XboxController::getRightBumperButton),
+        INTAKE_ALGAE = getXBox(XboxController::getLeftBumperButton),
+        DROP_ALGAE = getXBox(x -> x.getLeftTriggerAxis() > 0.75) // TODO is this the right direction to detect pressed?
+    ;
+
+    // Elevator
+    public final DoubleControl
+        ELEVATOR_CONTROL = getXBoxDouble(x -> x.getLeftY())
+    ;
+
+    // region soft disable
+
+    private void softDisable() {
         SmartDashboard.putString("controller_mode", "Soft Disabled");
         this.m_soft_disabled = true;
     }
 
-    public void softEnable() {
+    private void softEnable() {
         SmartDashboard.putString("controller_mode", "Soft Enabled");
         this.m_soft_disabled = false;
     }
 
     public boolean isSoftDisabled() {
-        return false; // FIXME: temporary to allow joystick-less use
-        /*if (this.m_auto_swap_mode) {
-            SmartDashboard.putNumber("twist", this.m_joystick.getThrottle());
-            if (this.m_joystick.getThrottle() < -0.75) {
+        if (this.m_auto_swap_mode && this.m_joystick.isPresent()) {
+            double throttle = this.m_joystick.get().getThrottle();
+            SmartDashboard.putNumber("twist", throttle);
+            if (throttle < -0.75) {
                 this.softEnable();
-            } else if (this.m_joystick.getThrottle() > 0.75) {
+            } else if (throttle > 0.75) {
                 this.softDisable();
             }
         }
-        return this.m_soft_disabled;*/
+        return this.m_soft_disabled;
     }
+
+    // endregion soft disable
 }

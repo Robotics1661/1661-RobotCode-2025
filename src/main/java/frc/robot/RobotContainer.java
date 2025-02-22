@@ -4,8 +4,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.wpilibj.Compressor;
-import edu.wpi.first.wpilibj.PneumaticsModuleType;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.ElevatorCallibrationCommand;
@@ -20,11 +18,10 @@ import frc.robot.subsystems.ElevatorSubsystem;
  */
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
-  private final Compressor m_compressor = new Compressor(Constants.PCM, PneumaticsModuleType.CTREPCM);
   private final ElevatorSubsystem m_elevator = new ElevatorSubsystem();
 
   // Controllers
-  private final JoyXboxWrapper m_combined_controller = new JoyXboxWrapper(0, 3, true);
+  private final JoyXboxWrapper m_combined_controller = new JoyXboxWrapper(0, 3);
 
   /**
    * The container for the robot. Contains subsystems, OI devices, and commands.
@@ -32,8 +29,7 @@ public class RobotContainer {
   public RobotContainer() {
     m_elevator.setDefaultCommand(new ManualElevatorCommand(
       m_elevator,
-      m_combined_controller::getElevatorUpButton,
-      m_combined_controller::getElevatorDownButton
+      m_combined_controller.ELEVATOR_CONTROL::get
     ));
   }
 
@@ -54,12 +50,7 @@ public class RobotContainer {
     return null;
   }
 
-  public void enableCompressor() {
-    m_compressor.enableDigital();
-  }
-
   public void stopAllOnDisable() {
-    m_compressor.disable();
     m_elevator.disableStop();
   }
 

@@ -13,10 +13,8 @@ package frc.robot;
  * constants are needed, to reduce verbosity.
  */
 public final class Constants {
-    public static final int PCM = 55; //pneumatics control module
-
     // Elevator components
-    public static final int ELEVATOR_MOTOR = 17;
+    public static final int ELEVATOR_MOTOR = 24;
     public static final int ELEVATOR_LIMIT_TOP = 0;
     public static final int ELEVATOR_LIMIT_WARN = 1;
     public static final int ELEVATOR_LIMIT_BOTTOM = 2;

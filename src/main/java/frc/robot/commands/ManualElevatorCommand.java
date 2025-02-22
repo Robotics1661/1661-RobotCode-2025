@@ -1,19 +1,17 @@
 package frc.robot.commands;
 
-import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
 
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.ElevatorSubsystem;
 
 public class ManualElevatorCommand extends Command {
     private final ElevatorSubsystem m_elevator;
-    private final BooleanSupplier m_goUp;
-    private final BooleanSupplier m_goDown;
+    private final DoubleSupplier m_directionInput;
 
-    public ManualElevatorCommand(ElevatorSubsystem elevator, BooleanSupplier goUp, BooleanSupplier goDown) {
+    public ManualElevatorCommand(ElevatorSubsystem elevator, DoubleSupplier directionInput) {
         this.m_elevator = elevator;
-        this.m_goUp = goUp;
-        this.m_goDown = goDown;
+        this.m_directionInput = directionInput;
 
         addRequirements(m_elevator);
     }
@@ -22,10 +20,10 @@ public class ManualElevatorCommand extends Command {
     public void execute() {
         super.execute();
 
-        if (m_goUp.getAsBoolean()) {
-            m_elevator.moveRate(0.1);
-        } else if (m_goDown.getAsBoolean()) {
-            m_elevator.moveRate(-0.1);
+        double control = m_directionInput.getAsDouble();
+
+        if (Math.abs(control) > 0.1) {
+            m_elevator.moveRate(control * 0.1);
         } else {
             m_elevator.stop();
         }

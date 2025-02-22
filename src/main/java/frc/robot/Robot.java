@@ -158,7 +158,6 @@ public class Robot extends TimedRobot {
 
     //DataLogManager.start();
     //m_robotContainer.getSysIdCommand().schedule();
-    m_robotContainer.enableCompressor();
   }
 
   /** This function is called periodically during test mode. */
