@@ -1,9 +1,6 @@
 package frc.robot.subsystems;
 
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
-import com.ctre.phoenix6.controls.CoastOut;
-import com.ctre.phoenix6.controls.StaticBrake;
-import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
@@ -11,9 +8,10 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import edu.wpi.first.wpilibj.DigitalInput;
 import edu.wpi.first.wpilibj.Timer;
 import frc.robot.Constants;
+import frc.robot.util.LimitedTalonFX;
 
 public class ElevatorSubsystem extends CustomSubsystemBase {
-    private final TalonFX m_motor = new TalonFX(Constants.ELEVATOR_MOTOR);
+    private final LimitedTalonFX m_motor = new LimitedTalonFX(new TalonFX(Constants.ELEVATOR_MOTOR), this::atTop, this::atBottom);
     // Switches return FALSE when pressed.
     private final DigitalInput m_topLimitSwitch = new DigitalInput(Constants.ELEVATOR_LIMIT_TOP);
     private final DigitalInput m_warnLimitSwitch = new DigitalInput(Constants.ELEVATOR_LIMIT_WARN);
@@ -27,13 +25,13 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         setSubsystem("elevator");
 
         // configure the motor to behave itself properly
-        var motorConfig = m_motor.getConfigurator();
+        var motorConfig = m_motor.m_wrapped.getConfigurator();
         motorConfig.apply(new MotorOutputConfigs()
             .withInverted(InvertedValue.Clockwise_Positive) // we want positive to correspond to up
             .withNeutralMode(NeutralModeValue.Brake) // don't just slide down when nothing is being output
         );
 
-        m_motor.setControl(new CoastOut());
+        m_motor.setControl(COAST_OUT);
 
         ntPutString("Control", "None");
         ntPutString("Position", "Unknown");
@@ -45,22 +43,10 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         ntPutBoolean("At Top", atTop());
         ntPutBoolean("In Bottom Warn", inWarn());
         ntPutBoolean("At Bottom", atBottom());
-        ntPutString("Position", m_motor.getPosition().toString());
+        ntPutString("Position", m_motor.m_wrapped.getPosition().toString());
         ntPutBoolean("Callibrated", m_callibrated);
 
-        // since we're using limit switches for software-stop, we need to send their state to the motor every tick
-        // IMPORTANT: if we start using any other types of control requests, this will need to be applied to them too
-        if (m_motor.getAppliedControl() instanceof DutyCycleOut dco) {
-            boolean shouldLimitForward = atTop();
-            boolean shouldLimitReverse = atBottom();
-
-            // however, there's no point flooding the CAN bus if nothing has changed.
-            if (dco.LimitForwardMotion != shouldLimitForward || dco.LimitReverseMotion != shouldLimitReverse) {
-                m_motor.setControl(dco
-                .withLimitForwardMotion(shouldLimitForward)
-                .withLimitReverseMotion(shouldLimitReverse));
-            }
-        }
+        m_motor.periodic();
     }
 
     // Callibration
@@ -95,7 +81,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         }
 
         stop();
-        m_motor.setPosition(0);
+        m_motor.m_wrapped.setPosition(0);
         m_callibrated = true;
         m_callibrationSettleTimer = null;
 
@@ -125,19 +111,17 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
      */
     public void moveRate(double rate) {
         ntPutString("Control", "DutyCycleOut("+rate+")");
-        m_motor.setControl(new DutyCycleOut(rate)
-        .withLimitForwardMotion(atTop())
-        .withLimitReverseMotion(atBottom()));
+        m_motor.setControl(getPooledDutyCycleOut(null, rate));
     }
 
     public void stop() {
         ntPutString("Control", "StaticBrake");
-        m_motor.setControl(new StaticBrake());
+        m_motor.setControl(STATIC_BRAKE);
     }
 
     public void disableStop() {
         ntPutString("Control", "CoastOut");
-        m_motor.setControl(new CoastOut());
+        m_motor.setControl(COAST_OUT);
     }
 
     protected boolean atBottom() {

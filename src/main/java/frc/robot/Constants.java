@@ -4,6 +4,10 @@
 
 package frc.robot;
 
+import edu.wpi.first.units.Unit;
+import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Angle;
+
 /**
  * The Constants class provides a convenient place for teams to hold robot-wide numerical or boolean
  * constants. This class should not be used for any other purpose. All constants should be declared
@@ -14,10 +18,18 @@ package frc.robot;
  */
 public final class Constants {
     // Elevator components
-    public static final int ELEVATOR_MOTOR = 24;
-    public static final int ELEVATOR_LIMIT_TOP = 0;
-    public static final int ELEVATOR_LIMIT_WARN = 1;
-    public static final int ELEVATOR_LIMIT_BOTTOM = 2;
+    public static final int ELEVATOR_MOTOR        = 24;
+    public static final int ELEVATOR_LIMIT_TOP    = 0; // DIO
+    public static final int ELEVATOR_LIMIT_WARN   = 1; // DIO
+    public static final int ELEVATOR_LIMIT_BOTTOM = 2; // DIO
+
+    // Manipulator components
+    public static final int MANIPULATOR_WRIST   = 22;
+    public static final int MANIPULATOR_ENCODER = 23;
+    public static final int MANIPULATOR_INTAKE  = 20;
+    public static final Angle MANIPULATOR_WRIST_MIN = Units.Rotations.of(0.387);
+    public static final Angle MANIPULATOR_WRIST_MAX = Units.Rotations.of(0.622);
 
     public static final boolean DISABLE_SWERVE = false; // not that swerve is implemented lol
+    public static final boolean SKIP_INIT = true;
 }

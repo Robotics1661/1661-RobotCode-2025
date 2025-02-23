@@ -9,6 +9,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ManualElevatorCommand;
 import frc.robot.subsystems.ElevatorSubsystem;
+import frc.robot.subsystems.ManipulatorSubsystem;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -19,6 +20,7 @@ import frc.robot.subsystems.ElevatorSubsystem;
 public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final ElevatorSubsystem m_elevator = new ElevatorSubsystem();
+  private final ManipulatorSubsystem m_manipulator = new ManipulatorSubsystem();
 
   // Controllers
   private final JoyXboxWrapper m_combined_controller = new JoyXboxWrapper(0, 3);
@@ -35,13 +37,13 @@ public class RobotContainer {
     m_combined_controller.CLIMB_LOCK.getTrigger().onTrue(new ElevatorCallibrationCommand(m_elevator));
   }
 
+  @SuppressWarnings("unused")
   public Command getInitCommand() {
-    return null; // we aren't sure it's safe yet
-    // if (m_elevator.isCallibrated()) {
-    //   return null;
-    // } else {
-    //   return new ElevatorCallibrationCommand(m_elevator);
-    // }
+    if (m_elevator.isCallibrated() || Constants.SKIP_INIT) {
+      return null;
+    } else {
+      return new ElevatorCallibrationCommand(m_elevator);
+    }
   }
 
   /**
@@ -55,6 +57,7 @@ public class RobotContainer {
 
   public void stopAllOnDisable() {
     m_elevator.disableStop();
+    m_manipulator.disableStop();
   }
 
   private static double deadband(double value, double deadband) {

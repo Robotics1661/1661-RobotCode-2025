@@ -1,0 +1,67 @@
+package frc.robot.util;
+
+import java.util.Set;
+import java.util.function.BooleanSupplier;
+
+import com.ctre.phoenix6.controls.CoastOut;
+import com.ctre.phoenix6.controls.ControlRequest;
+import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.StaticBrake;
+import com.ctre.phoenix6.hardware.TalonFX;
+
+public class LimitedTalonFX {
+    private static final Set<Class<? extends ControlRequest>> SAFE_REQUESTS = Set.of(
+        DutyCycleOut.class,
+        StaticBrake.class,
+        CoastOut.class
+    );
+
+    public final TalonFX m_wrapped;
+    private final BooleanSupplier m_forwardLimit;
+    private final BooleanSupplier m_reverseLimit;
+
+    private ControlRequest m_request;
+
+    public LimitedTalonFX(TalonFX motor, BooleanSupplier forwardLimit, BooleanSupplier reverseLimit) {
+        this.m_wrapped = motor;
+        this.m_forwardLimit = forwardLimit;
+        this.m_reverseLimit = reverseLimit;
+        this.m_request = null;
+    }
+
+    /**
+     * Update limit status of request, if applicable
+     * @param request request to update
+     * @param limitForward whether to prevent forward motion
+     * @param limitReverse whether to prevent reverse motion
+     * @return whether motor needs update
+     */
+    private static boolean updateRequest(ControlRequest request, boolean limitForward, boolean limitReverse) {
+        if (request instanceof DutyCycleOut dco) {
+            if (limitForward != dco.LimitForwardMotion || limitReverse != dco.LimitReverseMotion) {
+                dco.withLimitForwardMotion(limitForward).withLimitReverseMotion(limitReverse);
+                return true;
+            }
+        } // todo PositionVelocity
+        return false;
+    }
+
+    /**
+     * MUST be called to update limits
+     */
+    public void periodic() {
+        if (m_request != null && updateRequest(m_request, m_forwardLimit.getAsBoolean(), m_reverseLimit.getAsBoolean())) {
+            m_wrapped.setControl(m_request);
+        }
+    }
+
+    public <T extends ControlRequest> void setControl(T request) {
+        if (!SAFE_REQUESTS.contains(request.getClass())) {
+            m_wrapped.setControl(new CoastOut());
+            throw new RuntimeException("Unknown control request, cannot apply safely: "+request);
+        }
+        updateRequest(request, m_forwardLimit.getAsBoolean(), m_reverseLimit.getAsBoolean());
+        m_request = request;
+        m_wrapped.setControl(m_request);
+    }
+}
