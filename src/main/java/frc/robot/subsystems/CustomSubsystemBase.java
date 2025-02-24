@@ -10,12 +10,14 @@ import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
+import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.util.LimitedTalonFX;
 
 public class CustomSubsystemBase extends SubsystemBase {
     // Control request pool (for GC efficiency)
@@ -31,6 +33,10 @@ public class CustomSubsystemBase extends SubsystemBase {
     protected <T extends ControlRequest> T getPooledRequest(Object key, Class<T> clazz, Supplier<T> create, Consumer<T> update) {
         if (key == null) {
             key = NULL_KEY;
+        } else if (key instanceof TalonFX tfx) {
+            key = tfx.getDeviceID();
+        } else if (key instanceof LimitedTalonFX ltfx) {
+            key = ltfx.m_wrapped.getDeviceID();
         }
         var pool = pooledRequests.computeIfAbsent(key, $ -> new HashMap<>());
 

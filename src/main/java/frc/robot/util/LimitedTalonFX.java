@@ -6,6 +6,7 @@ import java.util.function.BooleanSupplier;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
 import com.ctre.phoenix6.hardware.TalonFX;
 
@@ -42,7 +43,12 @@ public class LimitedTalonFX {
                 dco.withLimitForwardMotion(limitForward).withLimitReverseMotion(limitReverse);
                 return true;
             }
-        } // todo PositionVelocity
+        } else if (request instanceof PositionVoltage pv) {
+            if (limitForward != pv.LimitForwardMotion || limitReverse != pv.LimitReverseMotion) {
+                pv.withLimitForwardMotion(limitForward).withLimitReverseMotion(limitReverse);
+                return true;
+            }
+        }
         return false;
     }
 

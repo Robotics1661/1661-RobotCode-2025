@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import static frc.robot.util.MathUtil.clamp;
+
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.PositionDutyCycle;
@@ -22,13 +24,21 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
     private final TalonFX m_intake = new TalonFX(Constants.MANIPULATOR_INTAKE);
     private final CANcoder m_encoder = new CANcoder(Constants.MANIPULATOR_ENCODER);
 
+    private double m_intake_rate = 0.0;
+    /** Whether the coral/algae has reached the back of the intake. Detected by current spikes */
+    private boolean m_intake_reached = false;
+
     public ManipulatorSubsystem() {
         setSubsystem("manipulator");
 
         ntPutData(builder -> {
-            builder.addDoubleProperty("encoder rotations", () -> m_encoder.getPosition().getValueAsDouble(), null);
-            builder.addBooleanProperty("at max", this::wristForwardStop, null);
-            builder.addBooleanProperty("at min", this::wristBackwardStop, null);
+            builder.addDoubleProperty("wrist/encoder rotations", () -> m_encoder.getPosition().getValueAsDouble(), null);
+            builder.addBooleanProperty("wrist/at max", this::wristForwardStop, null);
+            builder.addBooleanProperty("wrist/at min", this::wristBackwardStop, null);
+
+            builder.addDoubleProperty("intake/current (Amps)", () -> m_intake.getTorqueCurrent().getValueAsDouble(), null);
+            builder.addBooleanProperty("intake/spiking", () -> isIntakeCurrentSpiking(), null);
+            builder.addBooleanProperty("intake/back reached", () -> m_intake_reached, null);
         });
 
         var wristConf = m_wrist.m_wrapped.getConfigurator();
@@ -47,12 +57,35 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
     @Override
     public void periodic() {
         m_wrist.periodic();
+
+        if (!m_intake_reached && isIntakeCurrentSpiking()) {
+            m_intake_reached = true;
+            m_intake.setControl(STATIC_BRAKE);
+        }
     }
 
     // motion methods
 
+    public void runIntake(double rate) {
+        rate = clamp(rate, -1, 1);
+
+        if (Math.abs(rate - m_intake_rate) > 0.01) {
+            m_intake_reached = false;
+        }
+
+        m_intake_rate = rate;
+
+        if (!m_intake_reached) {
+            if (Math.abs(rate) > 0.01) {
+                m_intake.setControl(getPooledDutyCycleOut(m_intake, rate));
+            } else {
+                m_intake.setControl(STATIC_BRAKE);
+            }
+        }
+    }
+
     public void moveWristTo(WristSetPoint setPoint) {
-        m_wrist.setControl(getPooledPositionVoltage(null, setPoint.rotationValue));
+        m_wrist.setControl(getPooledPositionVoltage(m_wrist, setPoint.rotationValue));
     }
 
     public void disableStop() {
@@ -68,6 +101,13 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
 
     protected boolean wristBackwardStop() {
         return m_encoder.getAbsolutePosition().getValue().baseUnitMagnitude() <= Constants.MANIPULATOR_WRIST_MIN.baseUnitMagnitude();
+    }
+
+    protected boolean isIntakeCurrentSpiking() {
+        if (m_intake_rate < 0.0) { // irrelevant when outputting
+            return false;
+        }
+        throw new UnsupportedOperationException("Not implemented yet."); // TODO: implement
     }
 
     // Set Points

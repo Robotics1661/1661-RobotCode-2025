@@ -152,8 +152,13 @@ public class JoyXboxWrapper {
 
     // Intake/drop buttons
     public final BooleanButton
+        /** Drive to coral station, intake coral */
         INTAKE_CORAL = getXBox(XboxController::getRightBumperButton),
+        /** Align with nearest algae, by hextant, and pick it up */
         INTAKE_ALGAE = getXBox(XboxController::getLeftBumperButton),
+        /** Simply drop held gamepiece, without additional sophistication */
+        DROP_GAMEPIECE = getXBox(x -> x.getRightTriggerAxis() > 0.75),
+        /** Drop algae in processor */
         DROP_ALGAE = getXBox(x -> x.getLeftTriggerAxis() > 0.75)
     ;
 

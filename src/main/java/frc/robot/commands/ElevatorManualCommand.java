@@ -5,11 +5,11 @@ import java.util.function.DoubleSupplier;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.ElevatorSubsystem;
 
-public class ManualElevatorCommand extends Command {
+public class ElevatorManualCommand extends Command {
     private final ElevatorSubsystem m_elevator;
     private final DoubleSupplier m_directionInput;
 
-    public ManualElevatorCommand(ElevatorSubsystem elevator, DoubleSupplier directionInput) {
+    public ElevatorManualCommand(ElevatorSubsystem elevator, DoubleSupplier directionInput) {
         this.m_elevator = elevator;
         this.m_directionInput = directionInput;
 

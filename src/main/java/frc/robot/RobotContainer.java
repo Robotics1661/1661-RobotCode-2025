@@ -7,7 +7,8 @@ package frc.robot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.ElevatorCallibrationCommand;
-import frc.robot.commands.ManualElevatorCommand;
+import frc.robot.commands.ElevatorManualCommand;
+import frc.robot.commands.IntakeManualCommand;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ManipulatorSubsystem;
 
@@ -29,9 +30,15 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
-    m_elevator.setDefaultCommand(new ManualElevatorCommand(
+    m_elevator.setDefaultCommand(new ElevatorManualCommand(
       m_elevator,
       m_combined_controller.ELEVATOR_CONTROL::get
+    ));
+
+    m_manipulator.setDefaultCommand(new IntakeManualCommand(
+      m_manipulator,
+      m_combined_controller.INTAKE_CORAL::get,
+      m_combined_controller.DROP_GAMEPIECE::get
     ));
 
     m_combined_controller.CLIMB_LOCK.getTrigger().onTrue(new ElevatorCallibrationCommand(m_elevator));
