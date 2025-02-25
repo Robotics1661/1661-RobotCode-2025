@@ -1,8 +1,11 @@
 package frc.robot.subsystems;
 
 import java.util.function.DoubleConsumer;
+
+import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
@@ -28,10 +31,11 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     private Timer m_callibrationSettleTimer = null;
     private boolean m_callibrated = false;
 
-    private double kG = 0.0;//0.275;
-    private double kP = 0.0;
+    private double kP = 8.0;
     private double kI = 0.0;
     private double kD = 0.0;
+    private double mmCruiseVel = 80.0;
+    private double mmAcceleration = 120.0;
 
     public ElevatorSubsystem() {
         setSubsystem("elevator");
@@ -47,10 +51,11 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         m_motor.setControl(COAST_OUT);
 
         ntPutData(builder -> {
-            builder.addDoubleProperty("PID/kG", () -> kG, pidSetter(v -> kG = v));
             builder.addDoubleProperty("PID/kP", () -> kP, pidSetter(v -> kP = v));
             builder.addDoubleProperty("PID/kI", () -> kI, pidSetter(v -> kI = v));
             builder.addDoubleProperty("PID/kD", () -> kD, pidSetter(v -> kD = v));
+            builder.addDoubleProperty("PID/mmCruiseVel", () -> mmCruiseVel, pidSetter(v -> mmCruiseVel = v));
+            builder.addDoubleProperty("PID/mmAcceleration", () -> mmAcceleration, pidSetter(v -> mmAcceleration = v));
 
             builder.addBooleanProperty("At Top", this::atTop, null);
             builder.addBooleanProperty("In Bottom Warn", this::inWarn, null);
@@ -62,6 +67,9 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
             builder.addDoubleProperty("PID/Error", () -> {
                 if (m_motor.m_wrapped.getAppliedControl() instanceof PositionVoltage pv) {
                     lastError[0] = m_motor.m_wrapped.getPosition().getValueAsDouble() - pv.Position;
+                    return lastError[0];
+                } else if (m_motor.m_wrapped.getAppliedControl() instanceof MotionMagicVoltage mmv) {
+                    lastError[0] = m_motor.m_wrapped.getPosition().getValueAsDouble() - mmv.Position;
                     return lastError[0];
                 } else {
                     return lastError[0];
@@ -83,12 +91,18 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         var motorConfig = m_motor.m_wrapped.getConfigurator();
         motorConfig.apply(new Slot0Configs()
             .withGravityType(GravityTypeValue.Elevator_Static)
-            .withKG(kG)
-            .withKA(0.0)
-            .withKV(0.0)
+            .withKG(0.41198) // tuned with SysId
+            .withKS(0.01402)
+            .withKA(0.013195)
+            .withKV(0.11844)
             .withKP(kP)
             .withKI(kI)
             .withKD(kD)
+        );
+
+        motorConfig.apply(new MotionMagicConfigs()
+            .withMotionMagicCruiseVelocity(Units.RotationsPerSecond.of(mmCruiseVel))
+            .withMotionMagicAcceleration(Units.RotationsPerSecondPerSecond.of(mmAcceleration))
         );
     }
 
@@ -148,15 +162,20 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         ElevatorSetPoint(double rotationValue) {
             this.rotationValue = Units.Rotation.of(rotationValue);
         }
+
+        public String toString() {
+            return name() + "(" + rotationValue + ")";
+        }
     }
 
     public void moveTo(ElevatorSetPoint setPoint) {
         if (!m_callibrated) {
             return;
         }
+        ntPutString("Control", "MoveTo("+setPoint+")");
 
-        // FIXME: this needs to be motion magic
-        m_motor.setControl(getPooledPositionVoltage(null, setPoint.rotationValue));
+        m_motor.setControl(getPooledMotionMagicVoltage(null, setPoint.rotationValue));
+        //m_motor.setControl(getPooledPositionVoltage(null, setPoint.rotationValue));
     }
 
     /**

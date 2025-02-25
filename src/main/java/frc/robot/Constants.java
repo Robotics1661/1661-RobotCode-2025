@@ -29,6 +29,11 @@ public final class Constants {
     public static final Angle MANIPULATOR_WRIST_MIN = Units.Rotations.of(0.387);
     public static final Angle MANIPULATOR_WRIST_MAX = Units.Rotations.of(0.622);
 
+    // Climber components
+    public static final int CLIMBER_MAGNET           = 25;
+    public static final int CLIMBER_VERTICAL         = 21;
+    public static final int CLIMBER_LIMIT_MAGNET_OFF = 3; // DIO
+
     public static final boolean DISABLE_SWERVE = false; // not that swerve is implemented lol
     public static final boolean SKIP_INIT = true;
 }

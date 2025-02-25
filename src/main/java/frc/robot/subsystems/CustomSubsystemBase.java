@@ -8,11 +8,14 @@ import java.util.function.Supplier;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -56,12 +59,16 @@ public class CustomSubsystemBase extends SubsystemBase {
         return getPooledRequest(key, DutyCycleOut.class, () -> new DutyCycleOut(Output), dco -> dco.withOutput(Output));
     }
 
-    protected PositionVoltage getPooledPositionVoltage(Object key, double Position) {
-        return getPooledRequest(key, PositionVoltage.class, () -> new PositionVoltage(Position), pv -> pv.withPosition(Position));
+    protected VoltageOut getPooledVoltageOut(Object key, Voltage Output) {
+        return getPooledRequest(key, VoltageOut.class, () -> new VoltageOut(Output), vo -> vo.withOutput(Output));
     }
 
     protected PositionVoltage getPooledPositionVoltage(Object key, Angle Position) {
         return getPooledRequest(key, PositionVoltage.class, () -> new PositionVoltage(Position), pv -> pv.withPosition(Position));
+    }
+
+    protected MotionMagicVoltage getPooledMotionMagicVoltage(Object key, Angle Position) {
+        return getPooledRequest(key, MotionMagicVoltage.class, () -> new MotionMagicVoltage(Position), mmv -> mmv.withPosition(Position));
     }
 
     // Logging

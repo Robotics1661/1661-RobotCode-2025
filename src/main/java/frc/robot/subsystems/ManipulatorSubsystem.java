@@ -13,6 +13,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 
+import edu.wpi.first.math.filter.LinearFilter;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import frc.robot.Constants;
@@ -23,6 +24,9 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
     private final LimitedTalonFX m_wrist = new LimitedTalonFX(new TalonFX(Constants.MANIPULATOR_WRIST), this::wristForwardStop, this::wristBackwardStop);
     private final TalonFX m_intake = new TalonFX(Constants.MANIPULATOR_INTAKE);
     private final CANcoder m_encoder = new CANcoder(Constants.MANIPULATOR_ENCODER);
+
+    // Period is 0.02 seconds - this is the standard FRC main loop period
+    private final LinearFilter m_intake_current_filter = LinearFilter.singlePoleIIR(0.1, 0.02);
 
     private double m_intake_rate = 0.0;
     /** Whether the coral/algae has reached the back of the intake. Detected by current spikes */
@@ -37,6 +41,7 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
             builder.addBooleanProperty("wrist/at min", this::wristBackwardStop, null);
 
             builder.addDoubleProperty("intake/current (Amps)", () -> m_intake.getTorqueCurrent().getValueAsDouble(), null);
+            builder.addDoubleProperty("intake/filt current (Amps)", () -> m_intake_current_filter.lastValue(), null);
             builder.addBooleanProperty("intake/spiking", () -> isIntakeCurrentSpiking(), null);
             builder.addBooleanProperty("intake/back reached", () -> m_intake_reached, null);
         });
@@ -56,6 +61,7 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
 
     @Override
     public void periodic() {
+        m_intake_current_filter.calculate(m_intake.getTorqueCurrent().getValueAsDouble());
         m_wrist.periodic();
 
         if (!m_intake_reached && isIntakeCurrentSpiking()) {
@@ -77,7 +83,7 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
 
         if (!m_intake_reached) {
             if (Math.abs(rate) > 0.01) {
-                m_intake.setControl(getPooledDutyCycleOut(m_intake, rate));
+                m_intake.setControl(getPooledVoltageOut(m_intake, Units.Volt.of(rate * 12.0)));
             } else {
                 m_intake.setControl(STATIC_BRAKE);
             }
@@ -104,10 +110,10 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
     }
 
     protected boolean isIntakeCurrentSpiking() {
-        if (m_intake_rate < 0.0) { // irrelevant when outputting
+        if (m_intake_rate <= 0.0) { // irrelevant when outputting
             return false;
         }
-        return m_intake.getTorqueCurrent().getValueAsDouble() > 30.0;
+        return m_intake_current_filter.lastValue() > 60.0;
     }
 
     // Set Points

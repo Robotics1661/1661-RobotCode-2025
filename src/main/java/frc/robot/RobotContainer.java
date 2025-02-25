@@ -6,10 +6,13 @@ package frc.robot;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.commands.ClimberCallibrationCommand;
+import frc.robot.commands.ClimberManualCommand;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ElevatorManualCommand;
 import frc.robot.commands.ElevatorSysIdCommand;
 import frc.robot.commands.IntakeManualCommand;
+import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ManipulatorSubsystem;
 
@@ -23,6 +26,7 @@ public class RobotContainer {
   // The robot's subsystems and commands are defined here...
   private final ElevatorSubsystem m_elevator = new ElevatorSubsystem();
   private final ManipulatorSubsystem m_manipulator = new ManipulatorSubsystem();
+  private final ClimberSubsystem m_climber = new ClimberSubsystem();
 
   // Controllers
   private final JoyXboxWrapper m_combined_controller = new JoyXboxWrapper(0, 3);
@@ -43,7 +47,14 @@ public class RobotContainer {
       m_combined_controller.DROP_GAMEPIECE::get
     ));
 
-    m_combined_controller.CLIMB_LOCK.getTrigger().onTrue(new ElevatorCallibrationCommand(m_elevator));
+    m_climber.setDefaultCommand(new ClimberManualCommand(
+      m_climber,
+      m_combined_controller.CLIMB_LOCK::get,
+      m_combined_controller.CLIMB_UNLOCK::get
+    ));
+
+    m_combined_controller.CLIMB_DOWN.getTrigger().onTrue(new ClimberCallibrationCommand(m_climber));
+    m_combined_controller.ELEVATOR_CALLIBRATE.getTrigger().onTrue(new ElevatorCallibrationCommand(m_elevator));
   }
 
   public Command getSysIdCommand() {
@@ -71,6 +82,7 @@ public class RobotContainer {
   public void stopAllOnDisable() {
     m_elevator.disableStop();
     m_manipulator.disableStop();
+    m_climber.stop();
   }
 
   private static double deadband(double value, double deadband) {

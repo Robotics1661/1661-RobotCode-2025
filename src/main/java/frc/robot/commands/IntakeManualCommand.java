@@ -21,9 +21,9 @@ public class IntakeManualCommand extends Command {
     @Override
     public void execute() {
         if (m_intake.getAsBoolean()) {
-            m_manipulator.runIntake(0.1);
+            m_manipulator.runIntake(0.3);
         } else if (m_drop.getAsBoolean()) {
-            m_manipulator.runIntake(-0.1);
+            m_manipulator.runIntake(-0.15);
         } else {
             m_manipulator.runIntake(0.0);
         }

@@ -66,7 +66,10 @@ public class JoyXboxWrapper {
         return new XboxControl(getter);
     }
 
+    @FunctionalInterface
     public interface BooleanButton {
+        public static BooleanButton never = () -> false; 
+
         boolean get();
 
         default Trigger getTrigger() {
@@ -74,6 +77,7 @@ public class JoyXboxWrapper {
         }
     }
 
+    @FunctionalInterface
     public interface DoubleControl {
         double get();
     }
@@ -145,9 +149,9 @@ public class JoyXboxWrapper {
     // Climber buttons
     public final BooleanButton
         CLIMB_UP = getXBox(XboxController::getYButton),
-        CLIMB_DOWN = getXBox(XboxController::getAButton),  // TEMP USED FOR ELEVATOR SYSID SAFETY
-        CLIMB_LOCK = getXBox(XboxController::getBButton),  // TEMP USED FOR ELEVATOR CALLIBRATION
-        CLIMB_UNLOCK = getXBox(XboxController::getXButton) // TEMP USED FOR ELEVATOR TEST POSITION
+        CLIMB_DOWN = getXBox(XboxController::getAButton),  // WAS USED FOR ELEVATOR SYSID SAFETY
+        CLIMB_LOCK = getXBox(XboxController::getBButton),  // WAS USED FOR ELEVATOR CALLIBRATION
+        CLIMB_UNLOCK = getXBox(XboxController::getXButton) // WAS USED FOR ELEVATOR TEST POSITION
     ;
 
     // Intake/drop buttons
@@ -165,8 +169,9 @@ public class JoyXboxWrapper {
         ELEVATOR_CONTROL = getXBoxDouble(x -> -x.getLeftY())
     ;
     public final BooleanButton
-        ELEVATOR_TEST = CLIMB_UNLOCK,
-        SYSID_SAFETY = CLIMB_DOWN
+        ELEVATOR_CALLIBRATE = BooleanButton.never,
+        ELEVATOR_TEST = BooleanButton.never,
+        SYSID_SAFETY = BooleanButton.never
     ;
 
     // region soft disable
