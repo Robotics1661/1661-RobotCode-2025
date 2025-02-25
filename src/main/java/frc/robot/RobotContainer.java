@@ -8,6 +8,7 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ElevatorManualCommand;
+import frc.robot.commands.ElevatorSysIdCommand;
 import frc.robot.commands.IntakeManualCommand;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ManipulatorSubsystem;
@@ -32,7 +33,8 @@ public class RobotContainer {
   public RobotContainer() {
     m_elevator.setDefaultCommand(new ElevatorManualCommand(
       m_elevator,
-      m_combined_controller.ELEVATOR_CONTROL::get
+      m_combined_controller.ELEVATOR_CONTROL::get,
+      m_combined_controller.ELEVATOR_TEST::get
     ));
 
     m_manipulator.setDefaultCommand(new IntakeManualCommand(
@@ -42,6 +44,10 @@ public class RobotContainer {
     ));
 
     m_combined_controller.CLIMB_LOCK.getTrigger().onTrue(new ElevatorCallibrationCommand(m_elevator));
+  }
+
+  public Command getSysIdCommand() {
+    return ElevatorSysIdCommand.create(m_elevator, m_combined_controller.SYSID_SAFETY::get);
   }
 
   @SuppressWarnings("unused")

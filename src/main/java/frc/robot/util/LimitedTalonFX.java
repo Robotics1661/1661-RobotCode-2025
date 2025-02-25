@@ -8,11 +8,14 @@ import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
+import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 public class LimitedTalonFX {
     private static final Set<Class<? extends ControlRequest>> SAFE_REQUESTS = Set.of(
         DutyCycleOut.class,
+        PositionVoltage.class,
+        VoltageOut.class,
         StaticBrake.class,
         CoastOut.class
     );
@@ -46,6 +49,11 @@ public class LimitedTalonFX {
         } else if (request instanceof PositionVoltage pv) {
             if (limitForward != pv.LimitForwardMotion || limitReverse != pv.LimitReverseMotion) {
                 pv.withLimitForwardMotion(limitForward).withLimitReverseMotion(limitReverse);
+                return true;
+            }
+        } else if (request instanceof VoltageOut vo) {
+            if (limitForward != vo.LimitForwardMotion || limitReverse != vo.LimitReverseMotion) {
+                vo.withLimitForwardMotion(limitForward).withLimitReverseMotion(limitReverse);
                 return true;
             }
         }

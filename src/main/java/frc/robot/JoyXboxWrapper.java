@@ -145,9 +145,9 @@ public class JoyXboxWrapper {
     // Climber buttons
     public final BooleanButton
         CLIMB_UP = getXBox(XboxController::getYButton),
-        CLIMB_DOWN = getXBox(XboxController::getAButton),
-        CLIMB_LOCK = getXBox(XboxController::getBButton), // TEMP USED FOR ELEVATOR CALLIBRATION
-        CLIMB_UNLOCK = getXBox(XboxController::getXButton)
+        CLIMB_DOWN = getXBox(XboxController::getAButton),  // TEMP USED FOR ELEVATOR SYSID SAFETY
+        CLIMB_LOCK = getXBox(XboxController::getBButton),  // TEMP USED FOR ELEVATOR CALLIBRATION
+        CLIMB_UNLOCK = getXBox(XboxController::getXButton) // TEMP USED FOR ELEVATOR TEST POSITION
     ;
 
     // Intake/drop buttons
@@ -157,14 +157,16 @@ public class JoyXboxWrapper {
         /** Align with nearest algae, by hextant, and pick it up */
         INTAKE_ALGAE = getXBox(XboxController::getLeftBumperButton),
         /** Simply drop held gamepiece, without additional sophistication */
-        DROP_GAMEPIECE = getXBox(x -> x.getRightTriggerAxis() > 0.75),
-        /** Drop algae in processor */
-        DROP_ALGAE = getXBox(x -> x.getLeftTriggerAxis() > 0.75)
+        DROP_GAMEPIECE = getXBox(x -> x.getLeftTriggerAxis() > 0.75)
     ;
 
     // Elevator
     public final DoubleControl
         ELEVATOR_CONTROL = getXBoxDouble(x -> -x.getLeftY())
+    ;
+    public final BooleanButton
+        ELEVATOR_TEST = CLIMB_UNLOCK,
+        SYSID_SAFETY = CLIMB_DOWN
     ;
 
     // region soft disable

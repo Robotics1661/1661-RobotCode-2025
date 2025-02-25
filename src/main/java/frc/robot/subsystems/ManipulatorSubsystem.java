@@ -96,18 +96,18 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
     // Limits
 
     protected boolean wristForwardStop() {
-        return m_encoder.getAbsolutePosition().getValue().baseUnitMagnitude() >= Constants.MANIPULATOR_WRIST_MAX.baseUnitMagnitude();
+        return m_encoder.getPosition().getValue().baseUnitMagnitude() >= Constants.MANIPULATOR_WRIST_MAX.baseUnitMagnitude();
     }
 
     protected boolean wristBackwardStop() {
-        return m_encoder.getAbsolutePosition().getValue().baseUnitMagnitude() <= Constants.MANIPULATOR_WRIST_MIN.baseUnitMagnitude();
+        return m_encoder.getPosition().getValue().baseUnitMagnitude() <= Constants.MANIPULATOR_WRIST_MIN.baseUnitMagnitude();
     }
 
     protected boolean isIntakeCurrentSpiking() {
         if (m_intake_rate < 0.0) { // irrelevant when outputting
             return false;
         }
-        throw new UnsupportedOperationException("Not implemented yet."); // TODO: implement
+        return m_intake.getTorqueCurrent().getValueAsDouble() > 30.0;
     }
 
     // Set Points
@@ -116,7 +116,7 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
         INTAKE(0.56),
         TEST_LOW(0.4)
         ;
-        private final Angle rotationValue;
+        public final Angle rotationValue;
 
         WristSetPoint(double rotationValue) {
             this.rotationValue = Units.Rotation.of(rotationValue);

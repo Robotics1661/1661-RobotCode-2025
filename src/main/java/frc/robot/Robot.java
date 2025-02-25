@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix6.Utils;
 
 import edu.wpi.first.net.PortForwarder;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 //import edu.wpi.first.wpilibj.PowerDistribution;
 //import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -156,8 +157,8 @@ public class Robot extends TimedRobot {
     // Cancels all running commands at the start of test mode.
     CommandScheduler.getInstance().cancelAll();
 
-    //DataLogManager.start();
-    //m_robotContainer.getSysIdCommand().schedule();
+    DataLogManager.start();
+    m_robotContainer.getSysIdCommand().schedule();
   }
 
   /** This function is called periodically during test mode. */

@@ -4,7 +4,6 @@
 
 package frc.robot;
 
-import edu.wpi.first.units.Unit;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 
