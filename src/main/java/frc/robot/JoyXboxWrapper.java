@@ -164,6 +164,14 @@ public class JoyXboxWrapper {
         DROP_GAMEPIECE = getXBox(x -> x.getLeftTriggerAxis() > 0.75)
     ;
 
+    // Wrist
+    public final DoubleControl
+        WRIST_CONTROL = getXBoxDouble(x -> -x.getRightY())
+    ;
+    public final BooleanButton
+        WRIST_TEST = getFlightButton(6)
+    ;
+
     // Elevator
     public final DoubleControl
         ELEVATOR_CONTROL = getXBoxDouble(x -> -x.getLeftY())

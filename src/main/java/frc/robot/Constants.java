@@ -26,7 +26,7 @@ public final class Constants {
     public static final int MANIPULATOR_WRIST   = 22;
     public static final int MANIPULATOR_ENCODER = 23;
     public static final int MANIPULATOR_INTAKE  = 20;
-    public static final Angle MANIPULATOR_WRIST_MIN = Units.Rotations.of(0.387);
+    public static final Angle MANIPULATOR_WRIST_MIN = Units.Rotations.of(0.395);
     public static final Angle MANIPULATOR_WRIST_MAX = Units.Rotations.of(0.622);
 
     // Climber components

@@ -44,7 +44,9 @@ public class RobotContainer {
     m_manipulator.setDefaultCommand(new IntakeManualCommand(
       m_manipulator,
       m_combined_controller.INTAKE_CORAL::get,
-      m_combined_controller.DROP_GAMEPIECE::get
+      m_combined_controller.DROP_GAMEPIECE::get,
+      m_combined_controller.WRIST_TEST::get,
+      m_combined_controller.WRIST_CONTROL::get
     ));
 
     m_climber.setDefaultCommand(new ClimberManualCommand(
@@ -53,7 +55,7 @@ public class RobotContainer {
       m_combined_controller.CLIMB_UNLOCK::get
     ));
 
-    m_combined_controller.CLIMB_DOWN.getTrigger().onTrue(new ClimberCallibrationCommand(m_climber));
+    //m_combined_controller.CLIMB_DOWN.getTrigger().onTrue(new ClimberCallibrationCommand(m_climber));
     m_combined_controller.ELEVATOR_CALLIBRATE.getTrigger().onTrue(new ElevatorCallibrationCommand(m_elevator));
   }
 

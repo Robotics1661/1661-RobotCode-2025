@@ -33,7 +33,7 @@ public class ClimberSubsystem extends CustomSubsystemBase {
         var magnet_config = new SparkMaxConfig();
         magnet_config.apply(new SoftLimitConfig()
             .forwardSoftLimit(28.0)
-            .reverseSoftLimit(0.0)
+            .reverseSoftLimit(2.0)
             .forwardSoftLimitEnabled(m_callibration_state.complete)
             .reverseSoftLimitEnabled(m_callibration_state.complete)
         );
@@ -65,6 +65,14 @@ public class ClimberSubsystem extends CustomSubsystemBase {
     }
 
     // Motion methods
+
+    public void extendClimber() {
+        m_climb_motor.set(0.1);
+    }
+
+    public void retractClimber() {
+        m_climb_motor.set(-0.1);
+    }
 
     public void lockMagnet() {
         if (m_callibration_state.complete) {
