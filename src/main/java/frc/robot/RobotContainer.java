@@ -4,17 +4,26 @@
 
 package frc.robot;
 
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.ctre.phoenix6.swerve.SwerveRequest;
+
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.ClimberCallibrationCommand;
 import frc.robot.commands.ClimberManualCommand;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ElevatorManualCommand;
 import frc.robot.commands.ElevatorSysIdCommand;
 import frc.robot.commands.IntakeManualCommand;
+import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ClimberSubsystem;
+import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.ManipulatorSubsystem;
+import frc.robot.util.DoubleRingBuffer;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -23,10 +32,28 @@ import frc.robot.subsystems.ManipulatorSubsystem;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
+  // Drivetrain
+  private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(Units.MetersPerSecond); // kSpeedAt12Volts desired top speed
+  private double MaxAngularRate = Units.RotationsPerSecond.of(0.75).in(Units.RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
+
+  /* Setting up bindings for necessary control of the swerve drive platform */
+  private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
+          .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+          .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
+  private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
+
+  private final Telemetry logger = new Telemetry(MaxSpeed);
+
+  // average control out over `SMOOTH_PERIOD` inputs
+  private static final int SMOOTH_PERIOD = 7;
+  private final DoubleRingBuffer m_drive_forward_buffer = new DoubleRingBuffer(SMOOTH_PERIOD);
+  private final DoubleRingBuffer m_drive_sideways_buffer = new DoubleRingBuffer(SMOOTH_PERIOD);
+
   // The robot's subsystems and commands are defined here...
   private final ElevatorSubsystem m_elevator = new ElevatorSubsystem();
   private final ManipulatorSubsystem m_manipulator = new ManipulatorSubsystem();
   private final ClimberSubsystem m_climber = new ClimberSubsystem();
+  private final CommandSwerveDrivetrain m_drivetrain = TunerConstants.createDrivetrain();
 
   // Controllers
   private final JoyXboxWrapper m_combined_controller = new JoyXboxWrapper(0, 3);
@@ -35,6 +62,30 @@ public class RobotContainer {
    * The container for the robot. Contains subsystems, OI devices, and commands.
    */
   public RobotContainer() {
+    // Drivetrain
+    // Note that X is defined as forward according to WPILib convention,
+    // and Y is defined as to the left according to WPILib convention.
+    m_drivetrain.setDefaultCommand(
+      // Drivetrain will execute this command periodically
+      m_drivetrain.applyRequest(() -> drive
+        .withVelocityX(m_drive_forward_buffer.smooth(-modifyAxis(m_combined_controller.getLateralY(), "dt_y", true) * MaxSpeed)) // Drive forward with negative Y (forward)
+        .withVelocityY(m_drive_sideways_buffer.smooth(-modifyAxis(m_combined_controller.getLateralX(), "dt_x", true) * MaxSpeed)) // Drive left with negative X (left)
+        .withRotationalRate(-modifyAxis(m_combined_controller.getRotation(), "dt_rot", true) * MaxAngularRate) // Drive counterclockwise with negative X (left)
+    ));
+
+    m_combined_controller.X_BRAKE.getTrigger().whileTrue(m_drivetrain.applyRequest(() -> brake));
+
+    // Run SysId routines when holding back/start and X/Y.
+    // Note that each routine should be run exactly once in a single log.
+    /*joystick.back().and(joystick.y()).whileTrue(drivetrain.sysIdDynamic(Direction.kForward));
+    joystick.back().and(joystick.x()).whileTrue(drivetrain.sysIdDynamic(Direction.kReverse));
+    joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
+    joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));*/
+
+    // reset the field-centric heading on left bumper press
+    m_combined_controller.ZERO_GYRO.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric()));
+
+    // Other things
     m_elevator.setDefaultCommand(new ElevatorManualCommand(
       m_elevator,
       m_combined_controller.ELEVATOR_CONTROL::get,
@@ -52,23 +103,31 @@ public class RobotContainer {
     m_climber.setDefaultCommand(new ClimberManualCommand(
       m_climber,
       m_combined_controller.CLIMB_LOCK::get,
-      m_combined_controller.CLIMB_UNLOCK::get
+      m_combined_controller.CLIMB_UNLOCK::get,
+      m_combined_controller.CLIMB_UP::get,
+      m_combined_controller.CLIMB_DOWN::get
     ));
 
     //m_combined_controller.CLIMB_DOWN.getTrigger().onTrue(new ClimberCallibrationCommand(m_climber));
     m_combined_controller.ELEVATOR_CALLIBRATE.getTrigger().onTrue(new ElevatorCallibrationCommand(m_elevator));
+
+    m_drivetrain.registerTelemetry(logger::telemeterize);
   }
 
   public Command getSysIdCommand() {
     return ElevatorSysIdCommand.create(m_elevator, m_combined_controller.SYSID_SAFETY::get);
   }
 
-  @SuppressWarnings("unused")
   public Command getInitCommand() {
-    if (m_elevator.isCallibrated() || Constants.SKIP_INIT) {
+    if (Constants.SKIP_INIT) {
       return null;
     } else {
-      return new ElevatorCallibrationCommand(m_elevator);
+      if (m_climber.isCallibrated()) {
+        return null;
+      } else {
+        return new ClimberCallibrationCommand(m_climber);
+      }
+      //return new ElevatorCallibrationCommand(m_elevator);
     }
   }
 

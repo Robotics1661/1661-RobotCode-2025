@@ -35,5 +35,5 @@ public final class Constants {
     public static final int CLIMBER_LIMIT_MAGNET_OFF = 3; // DIO
 
     public static final boolean DISABLE_SWERVE = false; // not that swerve is implemented lol
-    public static final boolean SKIP_INIT = true;
+    public static final boolean SKIP_INIT = false;
 }

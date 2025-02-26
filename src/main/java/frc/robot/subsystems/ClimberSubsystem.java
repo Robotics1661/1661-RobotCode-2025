@@ -56,9 +56,9 @@ public class ClimberSubsystem extends CustomSubsystemBase {
 
             log("Callibration complete");
         } else if (m_callibration_state == CallibrationState.CALLIBRATED) {
-            if (m_magnet_motor.get() > 0.0 && m_magnet_motor.getEncoder().getPosition() >= 27.5) {
+            if (m_magnet_motor.get() > 0.0 && m_magnet_motor.getEncoder().getPosition() >= 27.0) {
                 m_magnet_motor.stopMotor();
-            } else if (m_magnet_motor.get() < 0.0 && m_magnet_motor.getEncoder().getPosition() <= 2.0) {
+            } else if (m_magnet_motor.get() < 0.0 && m_magnet_motor.getEncoder().getPosition() <= 1.0) {
                 m_magnet_motor.stopMotor();
             }
         }
@@ -67,22 +67,26 @@ public class ClimberSubsystem extends CustomSubsystemBase {
     // Motion methods
 
     public void extendClimber() {
-        m_climb_motor.set(0.1);
+        m_climb_motor.set(1.0);
     }
 
     public void retractClimber() {
-        m_climb_motor.set(-0.1);
+        m_climb_motor.set(-1.0);
+    }
+
+    public void stopClimber() {
+        m_climb_motor.set(0.0);
     }
 
     public void lockMagnet() {
         if (m_callibration_state.complete) {
-            m_magnet_motor.set(0.3);
+            m_magnet_motor.set(0.2);
         }
     }
 
     public void unlockMagnet() {
         if (m_callibration_state.complete) {
-            m_magnet_motor.set(-0.3);
+            m_magnet_motor.set(-0.2);
         }
     }
 
@@ -101,7 +105,7 @@ public class ClimberSubsystem extends CustomSubsystemBase {
         m_magnet_motor.stopMotor();
         m_callibration_state = CallibrationState.IN_PROGRESS;
         configureMagnetMotor();
-        m_magnet_motor.set(-0.06);
+        m_magnet_motor.set(-0.15);
     }
 
     public boolean isCallibrated() {

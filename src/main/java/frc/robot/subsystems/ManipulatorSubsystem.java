@@ -51,18 +51,18 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
     private double mmCruiseVel = 4.0;
     private double mmAcceleration = 6.0;
 
-    private final Timer m_copy_pos_timer = new Timer();
+    private Timer m_copy_pos_timer = new Timer();
 
     public ManipulatorSubsystem() {
         setSubsystem("manipulator");
 
         ntPutData(builder -> {
-            builder.addDoubleProperty("wrist/PID/kG", () -> kG, pidSetter(v -> kG = v));
+            /*builder.addDoubleProperty("wrist/PID/kG", () -> kG, pidSetter(v -> kG = v));
             builder.addDoubleProperty("wrist/PID/kP", () -> kP, pidSetter(v -> kP = v));
             builder.addDoubleProperty("wrist/PID/kI", () -> kI, pidSetter(v -> kI = v));
             builder.addDoubleProperty("wrist/PID/kD", () -> kD, pidSetter(v -> kD = v));
             builder.addDoubleProperty("wrist/PID/mmCruiseVel", () -> mmCruiseVel, pidSetter(v -> mmCruiseVel = v));
-            builder.addDoubleProperty("wrist/PID/mmAcceleration", () -> mmAcceleration, pidSetter(v -> mmAcceleration = v));
+            builder.addDoubleProperty("wrist/PID/mmAcceleration", () -> mmAcceleration, pidSetter(v -> mmAcceleration = v));*/
 
             builder.addDoubleProperty("wrist/encoder rotations", () -> m_encoder.getAbsolutePosition().getValueAsDouble(), null);
             builder.addDoubleProperty("wrist/motor encoder rotations", () -> m_wrist.m_wrapped.getPosition().getValueAsDouble(), null);
@@ -146,8 +146,9 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
 
     @Override
     public void periodic() {
-        if (m_copy_pos_timer.hasElapsed(0.25)) {
+        if (m_copy_pos_timer != null && m_copy_pos_timer.hasElapsed(0.25)) {
             m_wrist.m_wrapped.setPosition(m_encoder.getAbsolutePosition().getValue());
+            m_copy_pos_timer = null;
         }
 
         m_intake_current_filter.calculate(m_intake.getTorqueCurrent().getValueAsDouble());
