@@ -44,12 +44,14 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
     /** Whether the coral/algae has reached the back of the intake. Detected by current spikes */
     private boolean m_intake_reached = false;
 
-    private double kG = 0.175;
-    private double kP = 225.0;
-    private double kI = 0.0;
-    private double kD = 0.0;
-    private double mmCruiseVel = 4.0;
-    private double mmAcceleration = 6.0;
+    private final double kG = 0.175;
+    private final double kP = 225.0;
+    private final double kI = 0.0;
+    private final double kD = 0.0;
+    private final double mmCruiseVel = 4.0;
+    private final double mmAcceleration = 6.0;
+
+    private double calibPos = (Constants.MANIPULATOR_WRIST_MAX.in(Units.Rotations) + Constants.MANIPULATOR_WRIST_MIN.in(Units.Rotations)) / 2.0;
 
     private Timer m_copy_pos_timer = new Timer();
 
@@ -63,6 +65,8 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
             builder.addDoubleProperty("wrist/PID/kD", () -> kD, pidSetter(v -> kD = v));
             builder.addDoubleProperty("wrist/PID/mmCruiseVel", () -> mmCruiseVel, pidSetter(v -> mmCruiseVel = v));
             builder.addDoubleProperty("wrist/PID/mmAcceleration", () -> mmAcceleration, pidSetter(v -> mmAcceleration = v));*/
+
+            builder.addDoubleProperty("Calib Pos", () -> calibPos, null);
 
             builder.addDoubleProperty("wrist/encoder rotations", () -> m_encoder.getAbsolutePosition().getValueAsDouble(), null);
             builder.addDoubleProperty("wrist/motor encoder rotations", () -> m_wrist.m_wrapped.getPosition().getValueAsDouble(), null);
@@ -162,6 +166,16 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
 
     // motion methods
 
+    public void calibUp() {
+        calibPos += 0.05;
+        calibPos = clamp(calibPos, Constants.MANIPULATOR_WRIST_MIN.in(Units.Rotations), Constants.MANIPULATOR_WRIST_MAX.in(Units.Rotations));
+    }
+
+    public void calibDown() {
+        calibPos += 0.05;
+        calibPos = clamp(calibPos, Constants.MANIPULATOR_WRIST_MIN.in(Units.Rotations), Constants.MANIPULATOR_WRIST_MAX.in(Units.Rotations));
+    }
+
     public void runIntake(double rate) {
         rate = clamp(rate, -1, 1);
 
@@ -181,10 +195,23 @@ public class ManipulatorSubsystem extends CustomSubsystemBase {
     }
 
     public void moveWristTo(WristSetPoint setPoint) {
+        if (m_copy_pos_timer != null) {
+            return;
+        }
         ntPutString("wrist/Control", "MotionMagicVoltage("+setPoint+")");
 
         m_wrist.setControl(getPooledMotionMagicVoltage(m_wrist, setPoint.rotationValue));
         //m_wrist.setControl(getPooledPositionVoltage(m_wrist, setPoint.rotationValue));
+    }
+
+    public void moveToCalib() {
+        if (m_copy_pos_timer != null) {
+            return;
+        }
+        calibPos = clamp(calibPos, Constants.MANIPULATOR_WRIST_MIN.in(Units.Rotations), Constants.MANIPULATOR_WRIST_MAX.in(Units.Rotations));
+        ntPutString("wrist/Control", "MoveTo("+calibPos+")");
+
+        m_wrist.setControl(getPooledMotionMagicVoltage(m_wrist, Units.Rotations.of(calibPos)));
     }
 
     public void moveWrist(double rate) {

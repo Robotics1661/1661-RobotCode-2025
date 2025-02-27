@@ -62,6 +62,37 @@ public class JoyXboxWrapper {
         return new XboxButton(getter);
     }
 
+    private enum POVState {
+        UP(true, false, false, false),
+        UP_RIGHT(true, false, true, false),
+        RIGHT(false, false, true, false),
+        DOWN_RIGHT(false, true, true, false),
+        DOWN(false, true, false, false),
+        DOWN_LEFT(false, true, false, true),
+        LEFT(false, false, false, true),
+        UP_LEFT(true, false, false, true),
+        ;
+        public final boolean up;
+        public final boolean down;
+        public final boolean right;
+        public final boolean left;
+
+        POVState(boolean up, boolean down, boolean right, boolean left) {
+            this.up = up;
+            this.down = down;
+            this.right = right;
+            this.left = left;
+        }
+
+        public static POVState fromAngle(int angle) {
+            return values()[angle / 45];
+        }
+    }
+
+    private BooleanButton getXBoxPOV(Function<POVState, Boolean> getter) {
+        return new XboxButton(x -> getter.apply(POVState.fromAngle(x.getPOV())));
+    }
+
     private DoubleControl getXBoxDouble(Function<XboxController, Double> getter) {
         return new XboxControl(getter);
     }
@@ -179,7 +210,15 @@ public class JoyXboxWrapper {
     public final BooleanButton
         ELEVATOR_CALLIBRATE = BooleanButton.never,
         ELEVATOR_TEST = BooleanButton.never,
-        SYSID_SAFETY = BooleanButton.never
+        SYSID_SAFETY = BooleanButton.never,
+        ELEVATOR_WRIST_TEST = getXBox(x -> x.getRightTriggerAxis() > 0.75)
+    ;
+
+    public final BooleanButton
+        CALIB_ELEVATOR_UP = getXBoxPOV(p -> p.up),
+        CALIB_ELEVATOR_DOWN = getXBoxPOV(p -> p.down),
+        CALIB_WRIST_UP = getXBoxPOV(p -> p.right),
+        CALIB_WRIST_DOWN = getXBoxPOV(p -> p.left)
     ;
 
     // region soft disable

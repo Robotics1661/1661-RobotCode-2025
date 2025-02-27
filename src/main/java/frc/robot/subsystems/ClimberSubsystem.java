@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import com.revrobotics.spark.SparkMax;
+import com.ctre.phoenix6.Utils;
 import com.revrobotics.spark.SparkBase.PersistMode;
 import com.revrobotics.spark.SparkBase.ResetMode;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
@@ -46,7 +47,7 @@ public class ClimberSubsystem extends CustomSubsystemBase {
 
     @Override
     public void periodic() {
-        if (m_callibration_state == CallibrationState.IN_PROGRESS && isAtOff()) {
+        if (m_callibration_state == CallibrationState.IN_PROGRESS && (isAtOff() || Utils.isSimulation())) {
             m_magnet_motor.stopMotor();
             m_magnet_motor.getEncoder().setPosition(0.0);
 

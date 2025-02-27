@@ -7,16 +7,15 @@ package frc.robot;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
-import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
-import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine.Direction;
 import frc.robot.commands.ClimberCallibrationCommand;
 import frc.robot.commands.ClimberManualCommand;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ElevatorManualCommand;
 import frc.robot.commands.ElevatorSysIdCommand;
+import frc.robot.commands.ElevatorWristTestCommand;
 import frc.robot.commands.IntakeManualCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ClimberSubsystem;
@@ -106,6 +105,15 @@ public class RobotContainer {
       m_combined_controller.CLIMB_UNLOCK::get,
       m_combined_controller.CLIMB_UP::get,
       m_combined_controller.CLIMB_DOWN::get
+    ));
+
+    m_combined_controller.ELEVATOR_WRIST_TEST.getTrigger().whileTrue(new ElevatorWristTestCommand(
+      m_elevator,
+      m_manipulator,
+      m_combined_controller.CALIB_ELEVATOR_UP::get,
+      m_combined_controller.CALIB_ELEVATOR_DOWN::get,
+      m_combined_controller.CALIB_WRIST_UP::get,
+      m_combined_controller.CALIB_WRIST_DOWN::get
     ));
 
     //m_combined_controller.CLIMB_DOWN.getTrigger().onTrue(new ClimberCallibrationCommand(m_climber));

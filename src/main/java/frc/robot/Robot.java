@@ -7,15 +7,15 @@ package frc.robot;
 import com.ctre.phoenix6.Utils;
 
 import edu.wpi.first.net.PortForwarder;
-import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
-//import edu.wpi.first.wpilibj.PowerDistribution;
-//import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
+import edu.wpi.first.wpilibj.PowerDistribution;
+import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.util.LimelightMirror;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -26,10 +26,12 @@ import edu.wpi.first.wpilibj2.command.CommandScheduler;
 public class Robot extends TimedRobot {
   private Command m_autonomousCommand;
   private Command m_initCommand;
+  @SuppressWarnings("unused")
+  private LimelightMirror m_limelightMirror;
 
   private RobotContainer m_robotContainer;
 
-  //private PowerDistribution pd;
+  private PowerDistribution pd;
 
   /**
    * This function is run when the robot is first started up and should be used for any
@@ -44,10 +46,13 @@ public class Robot extends TimedRobot {
       PortForwarder.add(port, "limelight.local", port); // AprilTag limelight is ip 10.16.61.11
       PortForwarder.add(port + 10, "limelight-camera.local", port); // (Human) Camera limelight is ip 10.16.61.12
     }
+    m_limelightMirror = new LimelightMirror("limelight-camera", "limelight-camera-rio", 5812);
 
-    SmartDashboard.putNumber("voltage", 42);
-    SmartDashboard.putNumber("totaldraw", 42);
-    //pd = new PowerDistribution(1, ModuleType.kRev);
+    SmartDashboard.putNumber("voltage", 0.0);
+    //SmartDashboard.putNumber("totaldraw", 42);
+
+    pd = new PowerDistribution(1, ModuleType.kRev);
+    SmartDashboard.putData("PDH", pd::initSendable);
   }
 
   /**
@@ -70,7 +75,6 @@ public class Robot extends TimedRobot {
     // Power and Temperature
     if (!Utils.isSimulation()) {
       SmartDashboard.putNumber("voltage", RobotController.getBatteryVoltage());
-      //SmartDashboard.putNumber("totaldraw", pd.getTotalCurrent());
       SmartDashboard.putNumber("temperature", RobotController.getCPUTemp());//pd.getTemperature());
     }
 

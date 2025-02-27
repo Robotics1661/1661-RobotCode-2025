@@ -2,6 +2,7 @@ package frc.robot.subsystems;
 
 import java.util.function.DoubleConsumer;
 
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
 import com.ctre.phoenix6.configs.Slot0Configs;
@@ -31,11 +32,13 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     private Timer m_callibrationSettleTimer = null;
     private boolean m_callibrated = false;
 
-    private double kP = 8.0;
-    private double kI = 0.0;
-    private double kD = 0.0;
-    private double mmCruiseVel = 80.0;
-    private double mmAcceleration = 120.0;
+    private final double kP = 8.0;
+    private final double kI = 0.0;
+    private final double kD = 0.0;
+    private final double mmCruiseVel = 80.0;
+    private final double mmAcceleration = 120.0;
+
+    private double calibPos = 40.0;
 
     public ElevatorSubsystem() {
         setSubsystem("elevator");
@@ -51,11 +54,13 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         m_motor.setControl(COAST_OUT);
 
         ntPutData(builder -> {
-            builder.addDoubleProperty("PID/kP", () -> kP, pidSetter(v -> kP = v));
+            /*builder.addDoubleProperty("PID/kP", () -> kP, pidSetter(v -> kP = v));
             builder.addDoubleProperty("PID/kI", () -> kI, pidSetter(v -> kI = v));
             builder.addDoubleProperty("PID/kD", () -> kD, pidSetter(v -> kD = v));
             builder.addDoubleProperty("PID/mmCruiseVel", () -> mmCruiseVel, pidSetter(v -> mmCruiseVel = v));
-            builder.addDoubleProperty("PID/mmAcceleration", () -> mmAcceleration, pidSetter(v -> mmAcceleration = v));
+            builder.addDoubleProperty("PID/mmAcceleration", () -> mmAcceleration, pidSetter(v -> mmAcceleration = v));*/
+
+            builder.addDoubleProperty("Calib Pos", () -> calibPos, null);
 
             builder.addBooleanProperty("At Top", this::atTop, null);
             builder.addBooleanProperty("In Bottom Warn", this::inWarn, null);
@@ -127,7 +132,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
      * @return whether the elevator has in fact reached the bottom
      */
     public boolean completeCallibration() {
-        if (!atBottom()) {
+        if (!(atBottom() || Utils.isSimulation())) {
             m_callibrationSettleTimer = null;
             return false;
         }
@@ -153,6 +158,14 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     }
 
     // High-level motion methods
+    
+    public void calibUp() {
+        calibPos += 2.0;
+    }
+
+    public void calibDown() {
+        calibPos -= 2.0;
+    }
 
     public enum ElevatorSetPoint {
         TESTING(40.0)
@@ -176,6 +189,15 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
 
         m_motor.setControl(getPooledMotionMagicVoltage(null, setPoint.rotationValue));
         //m_motor.setControl(getPooledPositionVoltage(null, setPoint.rotationValue));
+    }
+
+    public void moveToCalib() {
+        if (!m_callibrated) {
+            return;
+        }
+        ntPutString("Control", "MoveTo("+calibPos+")");
+
+        m_motor.setControl(getPooledMotionMagicVoltage(null, Units.Rotations.of(calibPos)));
     }
 
     /**
