@@ -1,7 +1,5 @@
 package frc.robot.subsystems;
 
-import java.util.function.DoubleConsumer;
-
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -85,12 +83,12 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         ntPutString("Control", "None");
     }
 
-    private DoubleConsumer pidSetter(DoubleConsumer setter) {
+    /*private DoubleConsumer pidSetter(DoubleConsumer setter) {
         return v -> {
             setter.accept(v);
             configurePID();
         };
-    }
+    }*/
 
     private void configurePID() {
         var motorConfig = m_motor.m_wrapped.getConfigurator();

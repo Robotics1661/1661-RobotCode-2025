@@ -9,8 +9,10 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.pathplanner.lib.auto.AutoBuilder;
 
 import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.numbers.N1;
@@ -24,6 +26,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
+import frc.robot.subsystems.VisionSubsystem.PoseLatency;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -63,6 +66,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     );
 
     /* SysId routine for characterizing steer. This is used to find PID gains for the steer motors. */
+    @SuppressWarnings("unused")
     private final SysIdRoutine m_sysIdRoutineSteer = new SysIdRoutine(
         new SysIdRoutine.Config(
             null,        // Use default ramp rate (1 V/s)
@@ -83,6 +87,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
      * This is used to find PID gains for the FieldCentricFacingAngle HeadingController.
      * See the documentation of SwerveRequest.SysIdSwerveRotation for info on importing the log to SysId.
      */
+    @SuppressWarnings("unused")
     private final SysIdRoutine m_sysIdRoutineRotation = new SysIdRoutine(
         new SysIdRoutine.Config(
             /* This is in radians per second², but SysId only supports "volts per second" */
@@ -126,6 +131,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (Utils.isSimulation()) {
             startSimThread();
         }
+
+        customInit();
     }
 
     /**
@@ -150,6 +157,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (Utils.isSimulation()) {
             startSimThread();
         }
+
+        customInit();
     }
 
     /**
@@ -182,6 +191,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         if (Utils.isSimulation()) {
             startSimThread();
         }
+
+        customInit();
     }
 
     /**
@@ -284,5 +295,87 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         Matrix<N3, N1> visionMeasurementStdDevs
     ) {
         super.addVisionMeasurement(visionRobotPoseMeters, Utils.fpgaToCurrentTime(timestampSeconds), visionMeasurementStdDevs);
+    }
+
+    // Custom Code
+    private static final boolean ENABLE_LL_VISION_ESTIMATE = true;
+    private final VisionSubsystem m_visionSystem = new VisionSubsystem();
+
+    private void customInit() {
+        // need to read docs to see if this is safe
+        /*AutoBuilder.configure(
+            () -> getState().Pose.getTranslation(),
+            this::seedFieldRelative,
+            this::getRobotRelativeSpeeds,
+            this::driveRobotRelative,
+            PATH_FOLLOW_CONFIG,
+            CommandSwerveDrivetrain::mirrorAlliancePath,
+            this // Reference to this subsystem to set requirements
+        );*/
+        /*AutoBuilder.configureHolonomic(
+            m_odometry::getEstimatedPosition,
+            this::seedFieldRelative,
+            this::getRobotRelativeSpeeds,
+            this::driveRobotRelative,
+            PATH_FOLLOW_CONFIG,
+            DrivetrainSubsystem::mirrorAlliancePath,
+            this // Reference to this subsystem to set requirements
+        );*/
+
+        // Hacky way to schedule code into the odometry thread
+        registerTelemetry((state) -> odometryUpdate());
+    }
+
+    private void odometryUpdate() {
+        //System.out.println("Odometry update");
+        if (ENABLE_LL_VISION_ESTIMATE && !Utils.isSimulation()) {
+            updatePoseEstimatorWithVisionBotPose();
+        }
+    }
+
+    public void updatePoseEstimatorWithVisionBotPose() {
+        PoseLatency visionBotPose = m_visionSystem.getPoseLatency();
+        // invalid LL data
+        if (visionBotPose.pose2d().getX() == 0.0) {
+            //System.out.println("[LL] Invalid LL data");
+            return;
+        }
+
+        // distance from current pose to vision estimated pose
+        double poseDifference = this.getState().Pose.getTranslation()
+            .getDistance(visionBotPose.pose2d().getTranslation());
+
+        if (m_visionSystem.areAnyTargetsValid()) {
+            double xyStds;
+            double degStds;
+            // multiple targets detected
+            if (m_visionSystem.getNumberOfTargetsVisible() >= 2) {
+                xyStds = 0.5;
+                degStds = 6;
+                //System.out.println("[LL] >= 2 targets");
+            }
+            // 1 target with large area and close to estimated pose
+            else if (m_visionSystem.getBestTargetArea() > 0.8 && poseDifference < 0.5) {
+                xyStds = 1.0;
+                degStds = 12;
+                //System.out.println("[LL] 1 big target");
+            }
+            // 1 target farther away and estimated pose is close
+            else if (m_visionSystem.getBestTargetArea() > 0.1 && poseDifference < 0.3) {
+                xyStds = 2.0;
+                degStds = 30;
+                //System.out.println("[LL] 1 small target");
+            }
+            // conditions don't match to add a vision measurement
+            else {
+                //System.out.println("[LL] Too large pose difference: "+poseDifference);
+                return;
+            }
+
+            setVisionMeasurementStdDevs(
+                VecBuilder.fill(xyStds, xyStds, Math.toRadians(degStds)));
+            addVisionMeasurement(visionBotPose.pose2d(),
+                visionBotPose.timestampSeconds());
+        }
     }
 }
