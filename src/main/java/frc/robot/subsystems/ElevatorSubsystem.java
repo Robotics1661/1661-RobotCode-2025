@@ -1,5 +1,7 @@
 package frc.robot.subsystems;
 
+import static frc.robot.util.MathUtil.clamp;
+
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
 import com.ctre.phoenix6.configs.MotorOutputConfigs;
@@ -11,6 +13,7 @@ import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.GravityTypeValue;
 import com.ctre.phoenix6.signals.InvertedValue;
 import com.ctre.phoenix6.signals.NeutralModeValue;
+
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj.DigitalInput;
@@ -29,6 +32,8 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     /** Whether we've zeroed to the bottom yet */
     private Timer m_callibrationSettleTimer = null;
     private boolean m_callibrated = false;
+
+    private Angle activeBrakeTarget = null;
 
     private final double kP = 8.0;
     private final double kI = 0.0;
@@ -81,6 +86,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         });
 
         ntPutString("Control", "None");
+        ntPutNumber("smart move limit", 1.0);
     }
 
     /*private DoubleConsumer pidSetter(DoubleConsumer setter) {
@@ -123,6 +129,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     public void startCallibration() {
         m_callibrated = false;
         log("starting callibration");
+        activeBrakeTarget = null;
     }
 
     /**
@@ -158,11 +165,11 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     // High-level motion methods
     
     public void calibUp() {
-        calibPos += 2.0;
+        calibPos += 0.5;
     }
 
     public void calibDown() {
-        calibPos -= 2.0;
+        calibPos -= 0.5;
     }
 
     public enum ElevatorSetPoint {
@@ -183,16 +190,75 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         if (!m_callibrated) {
             return;
         }
+        activeBrakeTarget = null;
         ntPutString("Control", "MoveTo("+setPoint+")");
 
         m_motor.setControl(getPooledMotionMagicVoltage(null, setPoint.rotationValue));
         //m_motor.setControl(getPooledPositionVoltage(null, setPoint.rotationValue));
     }
 
+    /**
+     * Move using a DutyCycleOut. Will actively hold position on low-valued output
+     * @param rate how fast to move. Positive is up.
+     */
+    public void smartMoveRate(double rate) {
+        rate = clamp(rate, -1., 1.);
+        if (Math.abs(rate) < 0.001) {
+            if (m_callibrated) {
+                activeBrake();
+            } else {
+                ntPutString("Control", "StaticBrake");
+                m_motor.setControl(STATIC_BRAKE);
+                activeBrakeTarget = null;
+            }
+        } else {
+            ntPutString("Control", "DutyCycleOut("+rate+")");
+
+            // smart-limit the rate
+            //*
+            {
+                double limit = 1.;
+                final double motorRot = m_motor.m_wrapped.getPosition().getValue().in(Units.Rotations);
+                final double topOuterBound = Constants.ELEVATOR_MAX.in(Units.Rotations);
+                final double bottomOuterBound = Constants.ELEVATOR_MIN.in(Units.Rotations);
+                final double buffer = Constants.ELEVATOR_SLOW_BUFFER.in(Units.Rotations);
+                final double topInnerBound = topOuterBound - buffer;
+                final double bottomInnerBound = bottomOuterBound + buffer;
+
+                if (rate > 0. && motorRot >= topInnerBound) {
+                    // 0 is at bottom (outside) of buffer, 1 is at top (inside) of buffer
+                    final double factor = clamp((motorRot - topInnerBound) / buffer, 0., 1.);
+                    limit = 1. - factor;
+                } else if (rate < 0. && motorRot <= bottomInnerBound) {
+                    // 0 is at top (outside) of buffer, 1 is at bottom (inside) of buffer
+                    final double factor = clamp((bottomInnerBound - motorRot) / buffer, 0., 1.);
+                    limit = 1. - factor;
+                }
+
+                ntPutNumber("smart move limit", limit);
+
+                //rate = clamp(rate, -limit, limit);
+                rate *= limit;
+            } //*/
+
+            m_motor.setControl(getPooledDutyCycleOut(null, rate));
+            activeBrakeTarget = null;
+        }
+    }
+
+    private void activeBrake() {
+        if (activeBrakeTarget == null) {
+            activeBrakeTarget = clamp(m_motor.m_wrapped.getPosition().getValue(), Constants.ELEVATOR_MIN, Constants.ELEVATOR_MAX);
+        }
+        ntPutString("Control", "ActiveBrake("+activeBrakeTarget+")");
+        m_motor.setControl(getPooledMotionMagicVoltage(null, activeBrakeTarget));
+    }
+
     public void moveToCalib() {
         if (!m_callibrated) {
             return;
         }
+        activeBrakeTarget = null;
         ntPutString("Control", "MoveTo("+calibPos+")");
 
         m_motor.setControl(getPooledMotionMagicVoltage(null, Units.Rotations.of(calibPos)));
@@ -206,6 +272,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         if (m_callibrated) return;
 
         double rate = inWarn() ? -0.1 : -0.2;
+        activeBrakeTarget = null;
         moveRate(rate);
     }
 
@@ -239,16 +306,19 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     public void moveRate(double rate) {
         ntPutString("Control", "DutyCycleOut("+rate+")");
         m_motor.setControl(getPooledDutyCycleOut(null, rate));
+        activeBrakeTarget = null;
     }
 
     public void stop() {
         ntPutString("Control", "StaticBrake");
         m_motor.setControl(STATIC_BRAKE);
+        activeBrakeTarget = null;
     }
 
     public void disableStop() {
         ntPutString("Control", "StaticBrake");
         m_motor.setControl(STATIC_BRAKE);
+        activeBrakeTarget = null;
     }
 
     protected boolean atBottom() {

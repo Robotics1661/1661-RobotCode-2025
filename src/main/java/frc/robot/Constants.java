@@ -22,6 +22,10 @@ public final class Constants {
     public static final int ELEVATOR_LIMIT_WARN   = 1; // DIO
     public static final int ELEVATOR_LIMIT_BOTTOM = 2; // DIO
 
+    public static final Angle ELEVATOR_MAX = Units.Rotations.of(76.0);
+    public static final Angle ELEVATOR_MIN = Units.Rotations.zero();
+    public static final Angle ELEVATOR_SLOW_BUFFER = Units.Rotations.of(10.0);
+
     // Manipulator components
     public static final int MANIPULATOR_WRIST   = 22;
     public static final int MANIPULATOR_ENCODER = 23;
@@ -34,6 +38,9 @@ public final class Constants {
     public static final int CLIMBER_VERTICAL         = 21;
     public static final int CLIMBER_LIMIT_MAGNET_OFF = 3; // DIO
 
-    public static final boolean DISABLE_SWERVE = false; // not that swerve is implemented lol
+    public static final boolean DISABLE_SWERVE = false;
+    public static final boolean DISABLE_CLIMB = true;
+
     public static final boolean SKIP_INIT = false;
+    public static final boolean DO_ELEVATOR_WRIST_CALLIBRATION = false;
 }

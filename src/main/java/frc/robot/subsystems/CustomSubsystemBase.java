@@ -8,6 +8,7 @@ import java.util.function.Supplier;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
@@ -15,6 +16,7 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 
 import edu.wpi.first.units.measure.Angle;
+import edu.wpi.first.units.measure.AngularVelocity;
 import edu.wpi.first.units.measure.Voltage;
 import edu.wpi.first.util.sendable.Sendable;
 import edu.wpi.first.util.sendable.SendableBuilder;
@@ -57,6 +59,10 @@ public class CustomSubsystemBase extends SubsystemBase {
 
     protected DutyCycleOut getPooledDutyCycleOut(Object key, double Output) {
         return getPooledRequest(key, DutyCycleOut.class, () -> new DutyCycleOut(Output), dco -> dco.withOutput(Output));
+    }
+
+    protected MotionMagicVelocityVoltage getPooledMotionMagicVelocityVoltage(Object key, AngularVelocity Velocity) {
+        return getPooledRequest(key, MotionMagicVelocityVoltage.class, () -> new MotionMagicVelocityVoltage(Velocity), mmvv -> mmvv.withVelocity(Velocity));
     }
 
     protected VoltageOut getPooledVoltageOut(Object key, Voltage Output) {

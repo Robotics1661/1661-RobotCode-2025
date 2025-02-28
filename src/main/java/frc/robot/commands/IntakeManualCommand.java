@@ -1,57 +1,39 @@
 package frc.robot.commands;
 
 import java.util.function.BooleanSupplier;
-import java.util.function.DoubleSupplier;
-
 import edu.wpi.first.wpilibj2.command.Command;
-import frc.robot.subsystems.ManipulatorSubsystem;
-import frc.robot.subsystems.ManipulatorSubsystem.WristSetPoint;
+import frc.robot.subsystems.IntakeSubsystem;
 
 public class IntakeManualCommand extends Command {
-    private final ManipulatorSubsystem m_manipulator;
-    private final BooleanSupplier m_intake;
-    private final BooleanSupplier m_drop;
-    private final BooleanSupplier m_wristTest;
-    private final DoubleSupplier m_wristControl;
+    private final IntakeSubsystem m_intake;
+    private final BooleanSupplier m_intake_supplier;
+    private final BooleanSupplier m_drop_supplier;
 
     public IntakeManualCommand(
-        ManipulatorSubsystem manipulator,
-        BooleanSupplier intake,
-        BooleanSupplier drop,
-        BooleanSupplier wristTest,
-        DoubleSupplier wristControl
+        IntakeSubsystem intake,
+        BooleanSupplier intake_supplier,
+        BooleanSupplier drop_supplier
     ) {
-        this.m_manipulator = manipulator;
         this.m_intake = intake;
-        this.m_drop = drop;
-        this.m_wristTest = wristTest;
-        this.m_wristControl = wristControl;
+        this.m_intake_supplier = intake_supplier;
+        this.m_drop_supplier = drop_supplier;
 
-        addRequirements(m_manipulator);
+        addRequirements(m_intake);
     }
 
     @Override
     public void execute() {
-        if (m_intake.getAsBoolean()) {
-            m_manipulator.runIntake(0.3);
-        } else if (m_drop.getAsBoolean()) {
-            m_manipulator.runIntake(-0.15);
+        if (m_intake_supplier.getAsBoolean()) {
+            m_intake.runIntake(0.3);
+        } else if (m_drop_supplier.getAsBoolean()) {
+            m_intake.runIntake(-0.25);
         } else {
-            m_manipulator.runIntake(0.0);
-        }
-
-        double wristControl = m_wristControl.getAsDouble();
-        if (m_wristTest.getAsBoolean()) {
-            m_manipulator.moveWristTo(WristSetPoint.TEST_LOW);
-        } else if (Math.abs(wristControl) > 0.1) {
-            m_manipulator.moveWrist(wristControl * 0.1);
-        } else {
-            m_manipulator.stopWrist();
+            m_intake.runIntake(0.0);
         }
     }
 
     @Override
     public void end(boolean interrupted) {
-        m_manipulator.runIntake(0);
+        m_intake.disableStop();
     }
 }

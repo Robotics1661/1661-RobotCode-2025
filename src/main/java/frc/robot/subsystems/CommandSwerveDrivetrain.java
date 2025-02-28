@@ -9,8 +9,6 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
-import com.pathplanner.lib.auto.AutoBuilder;
-
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
@@ -238,6 +236,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
          */
         if (!m_hasAppliedOperatorPerspective || DriverStation.isDisabled()) {
             DriverStation.getAlliance().ifPresent(allianceColor -> {
+                m_isRed = allianceColor == Alliance.Red;
                 setOperatorPerspectiveForward(
                     allianceColor == Alliance.Red
                         ? kRedAlliancePerspectiveRotation
@@ -301,6 +300,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private static final boolean ENABLE_LL_VISION_ESTIMATE = true;
     private final VisionSubsystem m_visionSystem = new VisionSubsystem();
 
+    private boolean m_isRed = false;
+
     private void customInit() {
         // need to read docs to see if this is safe
         /*AutoBuilder.configure(
@@ -324,6 +325,20 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
         // Hacky way to schedule code into the odometry thread
         registerTelemetry((state) -> odometryUpdate());
+    }
+
+    /**
+     * Resets the rotation of the robot pose to 0 from the
+     * {@link SwerveRequest.ForwardPerspectiveValue#OperatorPerspective}
+     * perspective. This makes the current orientation of the robot X
+     * forward for field-centric maneuvers.
+     * <p>
+     * This is equivalent to calling {@link #resetRotation} with the operator
+     * perspective rotation.
+     */
+    public void seedFieldCentric180() {
+        // intentionally swapped.
+        resetRotation(m_isRed ? kBlueAlliancePerspectiveRotation : kRedAlliancePerspectiveRotation);
     }
 
     private void odometryUpdate() {

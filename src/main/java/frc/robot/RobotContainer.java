@@ -5,23 +5,34 @@
 package frc.robot;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+
+import java.util.function.DoubleSupplier;
+
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import frc.robot.commands.ClimberCallibrationCommand;
 import frc.robot.commands.ClimberManualCommand;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ElevatorManualCommand;
-import frc.robot.commands.ElevatorSysIdCommand;
-import frc.robot.commands.ElevatorWristTestCommand;
 import frc.robot.commands.IntakeManualCommand;
+import frc.robot.commands.WristManualCommand;
+import frc.robot.commands.WristMoveToCommand;
+import frc.robot.commands.testing.ElevatorSysIdCommand;
+import frc.robot.commands.testing.ElevatorWristTestCommand;
+import frc.robot.commands.testing.SimAutoCommand;
+import frc.robot.commands.util.EmptyDefaultCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
-import frc.robot.subsystems.ManipulatorSubsystem;
+import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.subsystems.WristSubsystem;
 import frc.robot.util.DoubleRingBuffer;
 
 /**
@@ -50,7 +61,8 @@ public class RobotContainer {
 
   // The robot's subsystems and commands are defined here...
   private final ElevatorSubsystem m_elevator = new ElevatorSubsystem();
-  private final ManipulatorSubsystem m_manipulator = new ManipulatorSubsystem();
+  private final WristSubsystem m_wrist = new WristSubsystem();
+  private final IntakeSubsystem m_intake = new IntakeSubsystem();
   private final ClimberSubsystem m_climber = new ClimberSubsystem();
   private final CommandSwerveDrivetrain m_drivetrain = TunerConstants.createDrivetrain();
 
@@ -81,43 +93,48 @@ public class RobotContainer {
     joystick.start().and(joystick.y()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kForward));
     joystick.start().and(joystick.x()).whileTrue(drivetrain.sysIdQuasistatic(Direction.kReverse));*/
 
-    // reset the field-centric heading on left bumper press
+    // reset the field-centric heading
     m_combined_controller.ZERO_GYRO.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric()));
+    m_combined_controller.ZERO_GYRO_180.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric180()));
 
     // Other things
     m_elevator.setDefaultCommand(new ElevatorManualCommand(
       m_elevator,
-      m_combined_controller.ELEVATOR_CONTROL::get,
-      m_combined_controller.ELEVATOR_TEST::get
+      deadband(m_combined_controller.ELEVATOR_CONTROL::get, 0.1)
     ));
 
-    m_manipulator.setDefaultCommand(new IntakeManualCommand(
-      m_manipulator,
+    m_wrist.setDefaultCommand(new WristManualCommand(
+      m_wrist,
+      deadband(m_combined_controller.WRIST_CONTROL::get, 0.1)
+    ));
+
+    m_intake.setDefaultCommand(new IntakeManualCommand(
+      m_intake,
       m_combined_controller.INTAKE_CORAL::get,
-      m_combined_controller.DROP_GAMEPIECE::get,
-      m_combined_controller.WRIST_TEST::get,
-      m_combined_controller.WRIST_CONTROL::get
+      m_combined_controller.DROP_GAMEPIECE::get
     ));
 
-    m_climber.setDefaultCommand(new ClimberManualCommand(
-      m_climber,
-      m_combined_controller.CLIMB_LOCK::get,
-      m_combined_controller.CLIMB_UNLOCK::get,
-      m_combined_controller.CLIMB_UP::get,
-      m_combined_controller.CLIMB_DOWN::get
+    m_climber.setDefaultCommand(Constants.DISABLE_CLIMB
+      ? new EmptyDefaultCommand<>(m_climber)
+      : new ClimberManualCommand(
+        m_climber,
+        m_combined_controller.CLIMB_LOCK::get,
+        m_combined_controller.CLIMB_UNLOCK::get,
+        m_combined_controller.CLIMB_UP::get,
+        m_combined_controller.CLIMB_DOWN::get
     ));
 
-    m_combined_controller.ELEVATOR_WRIST_TEST.getTrigger().whileTrue(new ElevatorWristTestCommand(
-      m_elevator,
-      m_manipulator,
-      m_combined_controller.CALIB_ELEVATOR_UP::get,
-      m_combined_controller.CALIB_ELEVATOR_DOWN::get,
-      m_combined_controller.CALIB_WRIST_UP::get,
-      m_combined_controller.CALIB_WRIST_DOWN::get
-    ));
+    if (Constants.DO_ELEVATOR_WRIST_CALLIBRATION) {
+      m_combined_controller.ELEVATOR_WRIST_TEST.getTrigger().whileTrue(new ElevatorWristTestCommand(
+        m_elevator,
+        m_wrist
+      ));
 
-    //m_combined_controller.CLIMB_DOWN.getTrigger().onTrue(new ClimberCallibrationCommand(m_climber));
-    m_combined_controller.ELEVATOR_CALLIBRATE.getTrigger().onTrue(new ElevatorCallibrationCommand(m_elevator));
+      m_combined_controller.CALIB_ELEVATOR_UP.getTrigger().onTrue(new InstantCommand(() -> m_elevator.calibUp()));
+      m_combined_controller.CALIB_ELEVATOR_DOWN.getTrigger().onTrue(new InstantCommand(() -> m_elevator.calibDown()));
+      m_combined_controller.CALIB_WRIST_UP.getTrigger().onTrue(new InstantCommand(() -> m_wrist.calibDown()));
+      m_combined_controller.CALIB_WRIST_DOWN.getTrigger().onTrue(new InstantCommand(() -> m_wrist.calibDown()));
+    }
 
     m_drivetrain.registerTelemetry(logger::telemeterize);
   }
@@ -126,16 +143,36 @@ public class RobotContainer {
     return ElevatorSysIdCommand.create(m_elevator, m_combined_controller.SYSID_SAFETY::get);
   }
 
+  @SuppressWarnings("unused")
   public Command getInitCommand() {
     if (Constants.SKIP_INIT) {
       return null;
     } else {
-      if (m_climber.isCallibrated()) {
-        return null;
-      } else {
-        return new ClimberCallibrationCommand(m_climber);
-      }
-      //return new ElevatorCallibrationCommand(m_elevator);
+      var climberCallibration = (m_climber.isCallibrated() || Constants.DISABLE_CLIMB)
+        ? new InstantCommand()
+        : new ClimberCallibrationCommand(m_climber);
+
+      var elevatorCallibration = m_elevator.isCallibrated()
+        ? new InstantCommand()
+        : new ElevatorCallibrationCommand(m_elevator);
+
+      var drivetrainCallibration = new InstantCommand(() -> m_drivetrain.runOnce(
+        () -> m_drivetrain.seedFieldCentric()
+      ));
+
+      var wristCallibration = m_wrist.withinSafeRange()
+        ? new InstantCommand()
+        : new WristMoveToCommand(
+          m_wrist,
+          Constants.MANIPULATOR_WRIST_MAX.plus(Constants.MANIPULATOR_WRIST_MIN).div(2.0)
+        );
+
+      return new ParallelCommandGroup(
+        climberCallibration,
+        elevatorCallibration,
+        drivetrainCallibration,
+        wristCallibration
+      );
     }
   }
 
@@ -145,13 +182,20 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
+    if (Utils.isSimulation()) {
+      return new SimAutoCommand(m_drivetrain);
+    }
     return null;
   }
 
   public void stopAllOnDisable() {
     m_elevator.disableStop();
-    m_manipulator.disableStop();
+    m_wrist.disableStop();
     m_climber.stop();
+  }
+
+  private static DoubleSupplier deadband(DoubleSupplier supplier, double deadband) {
+    return () -> deadband(supplier.getAsDouble(), deadband);
   }
 
   private static double deadband(double value, double deadband) {
@@ -169,7 +213,7 @@ public class RobotContainer {
   private double modifyAxis(double value, String label, boolean square) {
     SmartDashboard.putNumber("controller_"+label+"_raw", value);
     // Deadband
-    value = deadband(value, m_combined_controller.isSoftDisabled() ? 0.2 : 0.1); // was 0.05
+    value = deadband(value, m_combined_controller.isSoftDisabled() ? 0.1 : 0.05); // was 0.05
     SmartDashboard.putNumber("controller_"+label+"_db_cor", value);
 
     if (square) {

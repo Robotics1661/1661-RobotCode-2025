@@ -6,6 +6,7 @@ import java.util.function.BooleanSupplier;
 import com.ctre.phoenix6.controls.CoastOut;
 import com.ctre.phoenix6.controls.ControlRequest;
 import com.ctre.phoenix6.controls.DutyCycleOut;
+import com.ctre.phoenix6.controls.MotionMagicVelocityVoltage;
 import com.ctre.phoenix6.controls.MotionMagicVoltage;
 import com.ctre.phoenix6.controls.PositionVoltage;
 import com.ctre.phoenix6.controls.StaticBrake;
@@ -18,6 +19,7 @@ public class LimitedTalonFX {
         PositionVoltage.class,
         VoltageOut.class,
         MotionMagicVoltage.class,
+        MotionMagicVelocityVoltage.class,
         StaticBrake.class,
         CoastOut.class
     );
@@ -61,6 +63,11 @@ public class LimitedTalonFX {
         } else if (request instanceof MotionMagicVoltage mmv) {
             if (limitForward != mmv.LimitForwardMotion || limitReverse != mmv.LimitReverseMotion) {
                 mmv.withLimitForwardMotion(limitForward).withLimitReverseMotion(limitReverse);
+                return true;
+            }
+        } else if (request instanceof MotionMagicVelocityVoltage mmvv) {
+            if (limitForward != mmvv.LimitForwardMotion || limitReverse != mmvv.LimitReverseMotion) {
+                mmvv.withLimitForwardMotion(limitForward).withLimitReverseMotion(limitReverse);
                 return true;
             }
         }

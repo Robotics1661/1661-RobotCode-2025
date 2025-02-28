@@ -71,6 +71,7 @@ public class JoyXboxWrapper {
         DOWN_LEFT(false, true, false, true),
         LEFT(false, false, false, true),
         UP_LEFT(true, false, false, true),
+        NONE(false, false, false, false)
         ;
         public final boolean up;
         public final boolean down;
@@ -85,6 +86,9 @@ public class JoyXboxWrapper {
         }
 
         public static POVState fromAngle(int angle) {
+            if (angle < 0) {
+                return POVState.NONE;
+            }
             return values()[angle / 45];
         }
     }
@@ -174,20 +178,21 @@ public class JoyXboxWrapper {
     public final BooleanButton
         X_BRAKE = getFlightButton(2),
         ZERO_GYRO = getFlightButton(3),
+        ZERO_GYRO_180 = getFlightButton(5),
         ALIGN_TO_PROCESSOR = getFlightButton(4)
     ;
 
     // Climber buttons
     public final BooleanButton
         CLIMB_UP = getXBox(XboxController::getYButton),
-        CLIMB_DOWN = getXBox(XboxController::getAButton),  // WAS USED FOR ELEVATOR SYSID SAFETY
-        CLIMB_LOCK = getXBox(XboxController::getBButton),  // WAS USED FOR ELEVATOR CALLIBRATION
-        CLIMB_UNLOCK = getXBox(XboxController::getXButton) // WAS USED FOR ELEVATOR TEST POSITION
+        CLIMB_DOWN = getXBox(XboxController::getAButton),
+        CLIMB_LOCK = getXBox(XboxController::getBButton),
+        CLIMB_UNLOCK = getXBox(XboxController::getXButton)
     ;
 
     // Intake/drop buttons
     public final BooleanButton
-        /** Drive to coral station, intake coral */
+        /** ~~Drive to coral station,~~ intake coral */
         INTAKE_CORAL = getXBox(XboxController::getRightBumperButton),
         /** Align with nearest algae, by hextant, and pick it up */
         INTAKE_ALGAE = getXBox(XboxController::getLeftBumperButton),
@@ -199,17 +204,12 @@ public class JoyXboxWrapper {
     public final DoubleControl
         WRIST_CONTROL = getXBoxDouble(x -> -x.getRightY())
     ;
-    public final BooleanButton
-        WRIST_TEST = getFlightButton(6)
-    ;
 
     // Elevator
     public final DoubleControl
         ELEVATOR_CONTROL = getXBoxDouble(x -> -x.getLeftY())
     ;
     public final BooleanButton
-        ELEVATOR_CALLIBRATE = BooleanButton.never,
-        ELEVATOR_TEST = BooleanButton.never,
         SYSID_SAFETY = BooleanButton.never,
         ELEVATOR_WRIST_TEST = getXBox(x -> x.getRightTriggerAxis() > 0.75)
     ;
