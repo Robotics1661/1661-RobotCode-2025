@@ -62,5 +62,4 @@ public final class Constants {
     public static final boolean DISABLE_CLIMB = true;
 
     public static final boolean SKIP_INIT = false;
-    public static final boolean DO_ELEVATOR_WRIST_CALLIBRATION = false;
 }

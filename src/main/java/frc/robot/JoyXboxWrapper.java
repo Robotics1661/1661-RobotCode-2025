@@ -1,6 +1,7 @@
 package frc.robot;
 
 import java.util.Optional;
+import java.util.function.BooleanSupplier;
 import java.util.function.Function;
 
 import com.ctre.phoenix6.Utils;
@@ -164,14 +165,19 @@ public class JoyXboxWrapper {
 
     // endregion utils
 
-    // Reef targeting buttons
+    // Preset buttons
     public final BooleanButton
-        REEF_LEFT_L4 = getFlightButton(7),
-        REEF_RIGHT_L4 = getFlightButton(8),
-        REEF_LEFT_L3 = getFlightButton(9),
-        REEF_RIGHT_L3 = getFlightButton(10),
-        REEF_LEFT_L2 = getFlightButton(11),
-        REEF_RIGHT_L2 = getFlightButton(12)
+        PRESET_REEF_LEFT_L4 = getFlightButton(7),
+        PRESET_REEF_RIGHT_L4 = getFlightButton(8),
+        PRESET_REEF_LEFT_L3 = getFlightButton(9),
+        PRESET_REEF_RIGHT_L3 = getFlightButton(10),
+        PRESET_REEF_LEFT_L2 = getFlightButton(11),
+        PRESET_REEF_RIGHT_L2 = getFlightButton(12)
+    ;
+    public final BooleanButton
+        PRESET_REEF_L1 = getXBox(XboxController::getBButton),
+        PRESET_INTAKE = getXBox(XboxController::getYButton),
+        PRESET_REEF_ALGAE = getXBox(XboxController::getXButton) // TODO
     ;
 
     // Aux drive buttons
@@ -204,9 +210,7 @@ public class JoyXboxWrapper {
         INTAKE_ALGAE = getXBox(XboxController::getLeftBumperButton),
         /** Simply drop held gamepiece, without additional sophistication */
         DROP_GAMEPIECE = getXBox(x -> x.getRightTriggerAxis() > 0.5),
-        DROP_SLOW = Constants.DO_ELEVATOR_WRIST_CALLIBRATION
-            ? BooleanButton.never
-            : getXBox(XboxController::getRightBumperButton)
+        DROP_SLOW = getXBox(XboxController::getRightBumperButton)
     ;
 
     // Wrist
@@ -219,10 +223,7 @@ public class JoyXboxWrapper {
         ELEVATOR_CONTROL = getXBoxDouble(x -> -x.getLeftY())
     ;
     public final BooleanButton
-        SYSID_SAFETY = BooleanButton.never,
-        ELEVATOR_WRIST_TEST = Constants.DO_ELEVATOR_WRIST_CALLIBRATION
-            ? getXBox(XboxController::getRightBumperButton)
-            : BooleanButton.never
+        SYSID_SAFETY = BooleanButton.never
     ;
 
     public final BooleanButton
@@ -258,4 +259,15 @@ public class JoyXboxWrapper {
     }
 
     // endregion soft disable
+
+    public static BooleanSupplier anyAbove(double deadband, DoubleControl... inputs) {
+        return () -> {
+            for (DoubleControl input : inputs) {
+                if (Math.abs(input.get()) > deadband) {
+                    return true;
+                }
+            }
+            return false;
+        };
+    }
 }

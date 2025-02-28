@@ -36,8 +36,6 @@ public class WristSubsystem extends CustomSubsystemBase {
 
     private Angle activeBrakeTarget = null;
 
-    private double calibPos = (Constants.MANIPULATOR_WRIST_MAX.in(Units.Rotations) + Constants.MANIPULATOR_WRIST_MIN.in(Units.Rotations)) / 2.0;
-
     private Timer m_copy_pos_timer = new Timer();
 
     public WristSubsystem() {
@@ -50,8 +48,6 @@ public class WristSubsystem extends CustomSubsystemBase {
             builder.addDoubleProperty("PID/kD", () -> kD, pidSetter(v -> kD = v));
             builder.addDoubleProperty("PID/mmCruiseVel", () -> mmCruiseVel, pidSetter(v -> mmCruiseVel = v));
             builder.addDoubleProperty("PID/mmAcceleration", () -> mmAcceleration, pidSetter(v -> mmAcceleration = v));*/
-
-            builder.addDoubleProperty("Calib Pos", () -> calibPos, null);
 
             builder.addDoubleProperty("encoder rotations", () -> m_encoder.getAbsolutePosition().getValueAsDouble(), null);
             builder.addDoubleProperty("motor encoder rotations", () -> m_wrist.m_wrapped.getPosition().getValueAsDouble(), null);
@@ -136,24 +132,6 @@ public class WristSubsystem extends CustomSubsystemBase {
 
     // motion methods
 
-    public void calibUp() {
-        calibPos += 0.01;
-        calibPos = clamp(
-            calibPos,
-            Constants.MANIPULATOR_WRIST_MIN.in(Units.Rotations),
-            Constants.MANIPULATOR_WRIST_MAX.in(Units.Rotations)
-        );
-    }
-
-    public void calibDown() {
-        calibPos += 0.01;
-        calibPos = clamp(
-            calibPos,
-            Constants.MANIPULATOR_WRIST_MIN.in(Units.Rotations),
-            Constants.MANIPULATOR_WRIST_MAX.in(Units.Rotations)
-        );
-    }
-
     /**
      * Move wrist to setpoint.
      * @param setPoint point to move to
@@ -180,7 +158,7 @@ public class WristSubsystem extends CustomSubsystemBase {
         return moveWristToInternal(angle);
     }
 
-    private static final double epsilonRot = 0.1;
+    private static final double epsilonRot = 0.05;
 
     private boolean moveWristToInternal(Angle angle) {
         if (m_copy_pos_timer != null) {
@@ -190,7 +168,7 @@ public class WristSubsystem extends CustomSubsystemBase {
         angle = clamp(angle, Constants.MANIPULATOR_WRIST_MIN, Constants.MANIPULATOR_WRIST_MAX);
 
         m_wrist.setControl(getPooledMotionMagicVoltage(null, angle));
-        activeBrakeTarget = null;
+        activeBrakeTarget = angle;
 
         return m_wrist.m_wrapped.getPosition().getValue().minus(angle).abs(Units.Rotations) < epsilonRot;
         //m_wrist.setControl(getPooledPositionVoltage(null, setPoint.rotationValue));
@@ -203,17 +181,6 @@ public class WristSubsystem extends CustomSubsystemBase {
                 .abs(Units.Rotations) < epsilonRot;
         }
         return false;
-    }
-
-    public void moveToCalib() {
-        if (m_copy_pos_timer != null) {
-            return;
-        }
-        calibPos = clamp(calibPos, Constants.MANIPULATOR_WRIST_MIN.in(Units.Rotations), Constants.MANIPULATOR_WRIST_MAX.in(Units.Rotations));
-        ntPutString("Control", "MoveTo("+calibPos+")");
-
-        m_wrist.setControl(getPooledMotionMagicVoltage(null, Units.Rotations.of(calibPos)));
-        activeBrakeTarget = null;
     }
 
     public void smartMoveRate(double rate) {
@@ -319,8 +286,13 @@ public class WristSubsystem extends CustomSubsystemBase {
     // Set Points
     // 0.387 - 0.622 rotations
     public enum WristSetPoint {
-        INTAKE(0.56),
-        TEST_LOW(0.5)
+        INTAKE(0.6206),
+        L3(0.409179),
+        L2(0.395),
+        L4(0.44799),
+        L1(0.6184),
+        ALGAE_HIGH(0.49927),
+        ALGAE_LOW(0.503906)
         ;
         public final Angle rotationValue;
 

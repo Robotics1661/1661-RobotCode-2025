@@ -39,10 +39,8 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     private final double kP = 8.0;
     private final double kI = 0.0;
     private final double kD = 0.0;
-    private final double mmCruiseVel = 80.0;
-    private final double mmAcceleration = 120.0;
-
-    private double calibPos = 40.0;
+    private final double mmCruiseVel = 80.0 - 10.0;
+    private final double mmAcceleration = 120.0 - 20.;
 
     public ElevatorSubsystem() {
         setSubsystem("elevator");
@@ -63,8 +61,6 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
             builder.addDoubleProperty("PID/kD", () -> kD, pidSetter(v -> kD = v));
             builder.addDoubleProperty("PID/mmCruiseVel", () -> mmCruiseVel, pidSetter(v -> mmCruiseVel = v));
             builder.addDoubleProperty("PID/mmAcceleration", () -> mmAcceleration, pidSetter(v -> mmAcceleration = v));*/
-
-            builder.addDoubleProperty("Calib Pos", () -> calibPos, null);
 
             builder.addBooleanProperty("At Top", this::atTop, null);
             builder.addBooleanProperty("In Bottom Warn", this::inWarn, null);
@@ -164,18 +160,16 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     }
 
     // High-level motion methods
-    
-    public void calibUp() {
-        calibPos += 0.5;
-    }
-
-    public void calibDown() {
-        calibPos -= 0.5;
-    }
 
     public enum ElevatorSetPoint {
         BASE(1.0),
-        TESTING(40.0)
+        INTAKE(11.66),
+        L3(44.53),
+        L2(24.04),
+        L4(75.5),
+        L1(0.1631),
+        ALGAE_HIGH(38.69),
+        ALGAE_LOW(19.13)
         ;
         public final Angle rotationValue;
 
@@ -224,6 +218,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         angle = clamp(angle, Constants.ELEVATOR_MIN, Constants.ELEVATOR_MAX);
 
         m_motor.setControl(getPooledMotionMagicVoltage(null, angle));
+        activeBrakeTarget = angle;
 
         return m_motor.m_wrapped.getPosition().getValue().minus(angle).abs(Units.Rotations) < epsilonRot;
     }
@@ -295,16 +290,6 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         }
         ntPutString("Control", "ActiveBrake("+activeBrakeTarget+")");
         m_motor.setControl(getPooledMotionMagicVoltage(null, activeBrakeTarget));
-    }
-
-    public void moveToCalib() {
-        if (!m_callibrated) {
-            return;
-        }
-        activeBrakeTarget = null;
-        ntPutString("Control", "MoveTo("+calibPos+")");
-
-        m_motor.setControl(getPooledMotionMagicVoltage(null, Units.Rotations.of(calibPos)));
     }
 
     /**

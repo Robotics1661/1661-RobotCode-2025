@@ -7,6 +7,7 @@ package frc.robot;
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 
+import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -17,6 +18,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import frc.robot.JoyXboxWrapper.BooleanButton;
+import frc.robot.commands.ElevatorAndWristMoveToCommand;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ElevatorManualCommand;
 import frc.robot.commands.IntakeManualCommand;
@@ -24,14 +27,15 @@ import frc.robot.commands.WristManualCommand;
 import frc.robot.commands.WristMoveToCommand;
 import frc.robot.commands.ElevatorMoveToCommand;
 import frc.robot.commands.testing.ElevatorSysIdCommand;
-import frc.robot.commands.testing.ElevatorWristTestCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.WristSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorSetPoint;
+import frc.robot.subsystems.WristSubsystem.WristSetPoint;
 import frc.robot.util.DoubleRingBuffer;
+import frc.robot.util.TriConsumer;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -102,7 +106,10 @@ public class RobotContainer {
       deadband(m_combined_controller.ELEVATOR_CONTROL::get, 0.1)
     ));
 
-    m_combined_controller.RESET_ELEVATOR.getTrigger().onTrue(new ElevatorMoveToCommand(m_elevator, ElevatorSetPoint.BASE));
+    m_combined_controller.RESET_ELEVATOR.getTrigger().onTrue(
+      new ElevatorMoveToCommand(m_elevator, ElevatorSetPoint.BASE)
+      .until(JoyXboxWrapper.anyAbove(0.1, m_combined_controller.ELEVATOR_CONTROL))
+    );
 
     m_wrist.setDefaultCommand(new WristManualCommand(
       m_wrist,
@@ -117,6 +124,30 @@ public class RobotContainer {
       m_combined_controller.DROP_SLOW::get
     ));
 
+    // presets
+    {
+      final BooleanSupplier presetOverride = JoyXboxWrapper.anyAbove(
+        0.1,
+        m_combined_controller.ELEVATOR_CONTROL,
+        m_combined_controller.WRIST_CONTROL
+      );
+      final TriConsumer<BooleanButton, ElevatorSetPoint, WristSetPoint> registerPreset = (button, esp, wsp) -> {
+        button.getTrigger().onTrue(new ElevatorAndWristMoveToCommand(
+          m_elevator, m_wrist,
+          esp, wsp,
+          presetOverride
+        ));
+      };
+      registerPreset.accept(m_combined_controller.PRESET_INTAKE, ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE);
+      registerPreset.accept(m_combined_controller.PRESET_REEF_L1, ElevatorSetPoint.L1, WristSetPoint.L1);
+      registerPreset.accept(m_combined_controller.PRESET_REEF_LEFT_L2, ElevatorSetPoint.L2, WristSetPoint.L2);
+      registerPreset.accept(m_combined_controller.PRESET_REEF_RIGHT_L2, ElevatorSetPoint.L2, WristSetPoint.L2);
+      registerPreset.accept(m_combined_controller.PRESET_REEF_LEFT_L3, ElevatorSetPoint.L3, WristSetPoint.L3);
+      registerPreset.accept(m_combined_controller.PRESET_REEF_RIGHT_L3, ElevatorSetPoint.L3, WristSetPoint.L3);
+      registerPreset.accept(m_combined_controller.PRESET_REEF_LEFT_L4, ElevatorSetPoint.L4, WristSetPoint.L4);
+      registerPreset.accept(m_combined_controller.PRESET_REEF_RIGHT_L4, ElevatorSetPoint.L4, WristSetPoint.L4);
+    }
+
     /*m_climber.setDefaultCommand(Constants.DISABLE_CLIMB
       ? new EmptyDefaultCommand<>(m_climber)
       : new ClimberManualCommand(
@@ -126,18 +157,6 @@ public class RobotContainer {
         m_combined_controller.CLIMB_UP::get,
         m_combined_controller.CLIMB_DOWN::get
     ));*/
-
-    if (Constants.DO_ELEVATOR_WRIST_CALLIBRATION) {
-      m_combined_controller.ELEVATOR_WRIST_TEST.getTrigger().whileTrue(new ElevatorWristTestCommand(
-        m_elevator,
-        m_wrist
-      ));
-
-      m_combined_controller.CALIB_ELEVATOR_UP.getTrigger().onTrue(new InstantCommand(() -> m_elevator.calibUp()));
-      m_combined_controller.CALIB_ELEVATOR_DOWN.getTrigger().onTrue(new InstantCommand(() -> m_elevator.calibDown()));
-      m_combined_controller.CALIB_WRIST_UP.getTrigger().onTrue(new InstantCommand(() -> m_wrist.calibDown()));
-      m_combined_controller.CALIB_WRIST_DOWN.getTrigger().onTrue(new InstantCommand(() -> m_wrist.calibDown()));
-    }
 
     m_drivetrain.registerTelemetry(logger::telemeterize);
 
@@ -221,8 +240,8 @@ public class RobotContainer {
     SmartDashboard.putNumber("controller_"+label+"_db_cor", value);
 
     if (square) {
-      // Square the axis
-      value = Math.copySign(value * value, value);
+      // ~~Square~~ Cube the axis
+      value = Math.copySign(value * value * value, value);
 
       SmartDashboard.putNumber("controller_"+label+"_sq", value);
     }
