@@ -13,6 +13,8 @@ public class WristMoveToCommand extends Command {
     public WristMoveToCommand(WristSubsystem wrist, Angle target) {
         this.m_wrist = wrist;
         this.m_target = target;
+
+        addRequirements(m_wrist);
     }
 
     @Override

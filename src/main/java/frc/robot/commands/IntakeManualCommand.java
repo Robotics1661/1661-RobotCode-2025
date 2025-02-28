@@ -36,7 +36,7 @@ public class IntakeManualCommand extends Command {
         } else if (m_drop.getAsBoolean()) {
             m_intake.runIntake(-0.25);
         } else if (m_drop_slow.getAsBoolean()) {
-            m_intake.runIntake(-0.125);
+            m_intake.runIntake(-0.07);
         } else {
             m_intake.runIntake(0.0);
         }

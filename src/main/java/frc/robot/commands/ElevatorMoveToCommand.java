@@ -16,6 +16,8 @@ public class ElevatorMoveToCommand extends Command {
     public ElevatorMoveToCommand(ElevatorSubsystem elevator, Angle target) {
         this.m_elevator = elevator;
         this.m_target = target;
+
+        addRequirements(m_elevator);
     }
 
     @Override
