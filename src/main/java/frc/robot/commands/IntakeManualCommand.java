@@ -32,7 +32,7 @@ public class IntakeManualCommand extends Command {
         if (m_intake_coral.getAsBoolean()) {
             m_intake.runIntake(0.3);
         } else if (m_intake_algae.getAsBoolean()) {
-            m_intake.runIntake(0.3, true);
+            m_intake.runIntake(0.35, true);
         } else if (m_drop.getAsBoolean()) {
             m_intake.runIntake(-0.25);
         } else if (m_drop_slow.getAsBoolean()) {

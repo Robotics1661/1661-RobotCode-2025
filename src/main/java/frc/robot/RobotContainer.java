@@ -166,7 +166,7 @@ public class RobotContainer {
         () -> m_drivetrain.seedFieldCentric()
       ));*/
 
-      var wristCallibration = (m_wrist.withinSafeRange()/* || !auto*/)
+      var wristCallibration = (m_wrist.withinSafeRange() || !auto)
         ? new InstantCommand()
         : new WristMoveToCommand(
           m_wrist,
