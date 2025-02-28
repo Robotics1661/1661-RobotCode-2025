@@ -51,7 +51,7 @@ public class RobotContainer {
 
   /* Setting up bindings for necessary control of the swerve drive platform */
   private final SwerveRequest.FieldCentric drive = new SwerveRequest.FieldCentric()
-          .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
+          // we handle deadband separately .withDeadband(MaxSpeed * 0.1).withRotationalDeadband(MaxAngularRate * 0.1) // Add a 10% deadband
           .withDriveRequestType(DriveRequestType.OpenLoopVoltage); // Use open-loop control for drive motors
   private final SwerveRequest.SwerveDriveBrake brake = new SwerveRequest.SwerveDriveBrake();
 
@@ -236,12 +236,12 @@ public class RobotContainer {
   private double modifyAxis(double value, String label, boolean square) {
     SmartDashboard.putNumber("controller_"+label+"_raw", value);
     // Deadband
-    value = deadband(value, m_combined_controller.isSoftDisabled() ? 0.1 : 0.05); // was 0.05
+    value = deadband(value, 0.1); // was 0.05
     SmartDashboard.putNumber("controller_"+label+"_db_cor", value);
 
     if (square) {
-      // ~~Square~~ Cube the axis
-      value = Math.copySign(value * value * value, value);
+      // Square the axis
+      value = Math.copySign(value * value, value);
 
       SmartDashboard.putNumber("controller_"+label+"_sq", value);
     }
