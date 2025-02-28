@@ -9,10 +9,18 @@ import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveDrivetrainConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveRequest;
+import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.config.PIDConstants;
+import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.PathConstraints;
+import com.pathplanner.lib.path.PathPlannerPath;
+
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.DriverStation;
@@ -22,7 +30,7 @@ import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
-
+import frc.robot.Constants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.subsystems.VisionSubsystem.PoseLatency;
 
@@ -299,32 +307,65 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     // Custom Code
     private static final boolean ENABLE_LL_VISION_ESTIMATE = true;
     private final VisionSubsystem m_visionSystem = new VisionSubsystem();
-
+    private boolean m_useLimelightPoseAnyway = false;
     private boolean m_isRed = false;
 
+    private Pose2d $getPose() {
+        return getState().Pose;
+    }
+
+    private ChassisSpeeds $getRobotRelativeSpeeds() {
+        return getKinematics().toChassisSpeeds(getState().ModuleStates);
+    }
+
+    private final SwerveRequest.ApplyRobotSpeeds $chassisSpeedsRequest = new SwerveRequest.ApplyRobotSpeeds()
+        .withDriveRequestType(DriveRequestType.OpenLoopVoltage);
+
+    private void $driveRobotRelative(ChassisSpeeds chassisSpeeds) {
+        setControl($chassisSpeedsRequest.withSpeeds(chassisSpeeds));
+    }
+    
+    private boolean $shouldFlipPath() {
+        return m_isRed;
+    }
+
     private void customInit() {
-        // need to read docs to see if this is safe
-        /*AutoBuilder.configure(
-            () -> getState().Pose.getTranslation(),
-            this::seedFieldRelative,
-            this::getRobotRelativeSpeeds,
-            this::driveRobotRelative,
-            PATH_FOLLOW_CONFIG,
-            CommandSwerveDrivetrain::mirrorAlliancePath,
-            this // Reference to this subsystem to set requirements
-        );*/
-        /*AutoBuilder.configureHolonomic(
-            m_odometry::getEstimatedPosition,
-            this::seedFieldRelative,
-            this::getRobotRelativeSpeeds,
-            this::driveRobotRelative,
-            PATH_FOLLOW_CONFIG,
-            DrivetrainSubsystem::mirrorAlliancePath,
-            this // Reference to this subsystem to set requirements
-        );*/
+        AutoBuilder.configure(
+            this::$getPose,
+            this::resetPose,
+            this::$getRobotRelativeSpeeds,
+            this::$driveRobotRelative,
+            new PPHolonomicDriveController( // based on nothing. at all.
+                new PIDConstants(5.0, 0.0, 0.0),
+                new PIDConstants(5.0, 0.0, 0.0)
+            ),
+            Constants.PATHPLANNER_CONFIG,
+            this::$shouldFlipPath,
+            this
+        );
 
         // Hacky way to schedule code into the odometry thread
         registerTelemetry((state) -> odometryUpdate());
+    }
+
+    public Command pathfindTo(PathPlannerPath targetPath) {
+        return AutoBuilder.pathfindThenFollowPath(
+            targetPath,
+            new PathConstraints(
+                3.0, 4.0,
+                Math.toRadians(540), Math.toRadians(720)
+            )
+        );
+    }
+
+    public Command pathfindTo(Pose2d target) {
+        return AutoBuilder.pathfindToPoseFlipped(
+            target,
+            new PathConstraints(
+                3.0, 4.0,
+                Math.toRadians(540), Math.toRadians(720)
+            )
+        );
     }
 
     /**
@@ -381,6 +422,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 degStds = 30;
                 //System.out.println("[LL] 1 small target");
             }
+            else if (m_useLimelightPoseAnyway) {
+                m_useLimelightPoseAnyway = false;
+                xyStds = 0;
+                degStds = 0;
+                System.out.println("[LL] Using limelight pose anyway");
+            }
             // conditions don't match to add a vision measurement
             else {
                 //System.out.println("[LL] Too large pose difference: "+poseDifference);
@@ -392,5 +439,9 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             addVisionMeasurement(visionBotPose.pose2d(),
                 visionBotPose.timestampSeconds());
         }
+    }
+
+    public void useLimelightPoseAnyway() {
+        m_useLimelightPoseAnyway = true;
     }
 }

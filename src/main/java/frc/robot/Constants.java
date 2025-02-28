@@ -4,6 +4,12 @@
 
 package frc.robot;
 
+import java.io.IOException;
+
+import org.json.simple.parser.ParseException;
+
+import com.pathplanner.lib.config.RobotConfig;
+
 import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Angle;
 
@@ -38,6 +44,19 @@ public final class Constants {
     public static final int CLIMBER_VERTICAL         = 21;
     public static final int CLIMBER_LIMIT_MAGNET_OFF = 3; // DIO
 
+    // Drivetrain
+    public static final RobotConfig PATHPLANNER_CONFIG = getRobotConfig();
+    private static RobotConfig getRobotConfig() {
+        try {
+            return RobotConfig.fromGUISettings();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Flags
     public static final boolean DISABLE_SWERVE = false;
     public static final boolean DISABLE_CLIMB = true;
 

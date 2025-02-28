@@ -5,6 +5,10 @@
 package frc.robot;
 
 import com.ctre.phoenix6.Utils;
+import com.pathplanner.lib.commands.PathfindingCommand;
+import com.pathplanner.lib.pathfinding.LocalADStar;
+import com.pathplanner.lib.pathfinding.Pathfinding;
+
 import edu.wpi.first.net.PortForwarder;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
@@ -36,6 +40,7 @@ public class Robot extends TimedRobot {
    */
   @Override
   public void robotInit() {    
+    Pathfinding.setPathfinder(new LocalADStar());
     // Instantiate our RobotContainer.  This will perform all our button bindings, and put our
     // autonomous chooser on the dashboard.
     m_robotContainer = new RobotContainer();
@@ -49,6 +54,9 @@ public class Robot extends TimedRobot {
 
     pd = new PowerDistribution(1, ModuleType.kRev);
     //SmartDashboard.putData("PDH", pd::initSendable);
+
+    // Pre-run classloading
+    PathfindingCommand.warmupCommand().schedule();
   }
 
   /**
