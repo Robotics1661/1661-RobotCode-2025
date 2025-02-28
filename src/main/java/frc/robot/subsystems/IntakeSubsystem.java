@@ -49,6 +49,10 @@ public class IntakeSubsystem extends CustomSubsystemBase {
     // motion methods
 
     public void runIntake(double rate) {
+        runIntake(rate, false);
+    }
+
+    public void runIntake(double rate, boolean skipCurrentLimit) {
         rate = clamp(rate, -1, 1);
 
         if (Math.abs(rate - m_intake_rate) > 0.01) {
@@ -56,6 +60,10 @@ public class IntakeSubsystem extends CustomSubsystemBase {
         }
 
         m_intake_rate = rate;
+        if (skipCurrentLimit) {
+            m_intake_reached = false;
+            m_intake_rate = 0.0; // prevent current spike code from running
+        }
 
         if (!m_intake_reached) {
             if (Math.abs(rate) > 0.01) {

@@ -179,25 +179,31 @@ public class JoyXboxWrapper {
         X_BRAKE = getFlightButton(2),
         ZERO_GYRO = getFlightButton(3),
         ZERO_GYRO_180 = getFlightButton(5),
-        ALIGN_TO_PROCESSOR = getFlightButton(4)
+        RESET_ELEVATOR = getFlightButton(4)
     ;
 
     // Climber buttons
-    public final BooleanButton
+    /*public final BooleanButton
         CLIMB_UP = getXBox(XboxController::getYButton),
         CLIMB_DOWN = getXBox(XboxController::getAButton),
         CLIMB_LOCK = getXBox(XboxController::getBButton),
         CLIMB_UNLOCK = getXBox(XboxController::getXButton)
+    ;*/
+    public final BooleanButton
+        CLIMB_UP = BooleanButton.never,
+        CLIMB_DOWN = BooleanButton.never,
+        CLIMB_LOCK = BooleanButton.never,
+        CLIMB_UNLOCK = BooleanButton.never
     ;
 
     // Intake/drop buttons
     public final BooleanButton
-        /** ~~Drive to coral station,~~ intake coral */
-        INTAKE_CORAL = getXBox(XboxController::getRightBumperButton),
-        /** Align with nearest algae, by hextant, and pick it up */
+        /** Intake coral */
+        INTAKE_CORAL = getXBox(x -> x.getLeftTriggerAxis() > 0.5),
+        /** Intake algae */
         INTAKE_ALGAE = getXBox(XboxController::getLeftBumperButton),
         /** Simply drop held gamepiece, without additional sophistication */
-        DROP_GAMEPIECE = getXBox(x -> x.getLeftTriggerAxis() > 0.75)
+        DROP_GAMEPIECE = getXBox(x -> x.getRightTriggerAxis() > 0.5)
     ;
 
     // Wrist
@@ -211,7 +217,7 @@ public class JoyXboxWrapper {
     ;
     public final BooleanButton
         SYSID_SAFETY = BooleanButton.never,
-        ELEVATOR_WRIST_TEST = getXBox(x -> x.getRightTriggerAxis() > 0.75)
+        ELEVATOR_WRIST_TEST = getXBox(XboxController::getRightBumperButton)
     ;
 
     public final BooleanButton

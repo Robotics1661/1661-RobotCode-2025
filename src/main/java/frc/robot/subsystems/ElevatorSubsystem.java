@@ -173,6 +173,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     }
 
     public enum ElevatorSetPoint {
+        BASE(1.0),
         TESTING(40.0)
         ;
         public final Angle rotationValue;
@@ -186,15 +187,44 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         }
     }
 
-    public void moveTo(ElevatorSetPoint setPoint) {
+    /**
+     * Move to setpoint.
+     * @param setPoint point to move to
+     * @return whether we have reached the target
+     */
+    public boolean moveTo(ElevatorSetPoint setPoint) {
         if (!m_callibrated) {
-            return;
+            return false;
         }
-        activeBrakeTarget = null;
         ntPutString("Control", "MoveTo("+setPoint+")");
+        return moveToInternal(setPoint.rotationValue);
+    }
 
-        m_motor.setControl(getPooledMotionMagicVoltage(null, setPoint.rotationValue));
-        //m_motor.setControl(getPooledPositionVoltage(null, setPoint.rotationValue));
+    /**
+     * Move to set target. {@link #moveTo(ElevatorSetPoint)} is prefered
+     * @param target angle to move to
+     * @return whether we have reached the target
+     */
+    public boolean moveTo(Angle target) {
+        if (!m_callibrated) {
+            return false;
+        }
+        ntPutString("Control", "MoveTo("+target+")");
+        return moveToInternal(target);
+    }
+
+    private static final double epsilonRot = 0.1;
+
+    private boolean moveToInternal(Angle angle) {
+        if (!m_callibrated) {
+            return false;
+        }
+
+        angle = clamp(angle, Constants.ELEVATOR_MIN, Constants.ELEVATOR_MAX);
+
+        m_motor.setControl(getPooledMotionMagicVoltage(null, angle));
+
+        return m_motor.m_wrapped.getPosition().getValue().minus(angle).abs(Units.Rotations) < epsilonRot;
     }
 
     /**

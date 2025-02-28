@@ -177,7 +177,7 @@ public class WristSubsystem extends CustomSubsystemBase {
         return moveWristToInternal(angle);
     }
 
-    private static final double epsilonRot = 0.01;
+    private static final double epsilonRot = 0.02;
 
     private boolean moveWristToInternal(Angle angle) {
         if (m_copy_pos_timer != null) {

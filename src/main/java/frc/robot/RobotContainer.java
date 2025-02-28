@@ -5,13 +5,14 @@
 package frc.robot;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
+import com.pathplanner.lib.auto.AutoBuilder;
 
 import java.util.function.DoubleSupplier;
 
-import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
 import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -23,9 +24,9 @@ import frc.robot.commands.ElevatorManualCommand;
 import frc.robot.commands.IntakeManualCommand;
 import frc.robot.commands.WristManualCommand;
 import frc.robot.commands.WristMoveToCommand;
+import frc.robot.commands.ElevatorMoveToCommand;
 import frc.robot.commands.testing.ElevatorSysIdCommand;
 import frc.robot.commands.testing.ElevatorWristTestCommand;
-import frc.robot.commands.testing.SimAutoCommand;
 import frc.robot.commands.util.EmptyDefaultCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ClimberSubsystem;
@@ -33,6 +34,7 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.WristSubsystem;
+import frc.robot.subsystems.ElevatorSubsystem.ElevatorSetPoint;
 import frc.robot.util.DoubleRingBuffer;
 
 /**
@@ -42,6 +44,7 @@ import frc.robot.util.DoubleRingBuffer;
  * subsystems, commands, and button mappings) should be declared here.
  */
 public class RobotContainer {
+  private final SendableChooser<Command> autoChooser;
   // Drivetrain
   private double MaxSpeed = TunerConstants.kSpeedAt12Volts.in(Units.MetersPerSecond); // kSpeedAt12Volts desired top speed
   private double MaxAngularRate = Units.RotationsPerSecond.of(0.75).in(Units.RadiansPerSecond); // 3/4 of a rotation per second max angular velocity
@@ -103,6 +106,8 @@ public class RobotContainer {
       deadband(m_combined_controller.ELEVATOR_CONTROL::get, 0.1)
     ));
 
+    m_combined_controller.RESET_ELEVATOR.getTrigger().onTrue(new ElevatorMoveToCommand(m_elevator, ElevatorSetPoint.BASE));
+
     m_wrist.setDefaultCommand(new WristManualCommand(
       m_wrist,
       deadband(m_combined_controller.WRIST_CONTROL::get, 0.1)
@@ -111,6 +116,7 @@ public class RobotContainer {
     m_intake.setDefaultCommand(new IntakeManualCommand(
       m_intake,
       m_combined_controller.INTAKE_CORAL::get,
+      m_combined_controller.INTAKE_ALGAE::get,
       m_combined_controller.DROP_GAMEPIECE::get
     ));
 
@@ -137,6 +143,9 @@ public class RobotContainer {
     }
 
     m_drivetrain.registerTelemetry(logger::telemeterize);
+
+    autoChooser = AutoBuilder.buildAutoChooser();
+    SmartDashboard.putData("Auto Chooser", autoChooser);
   }
 
   public Command getSysIdCommand() {
@@ -156,9 +165,9 @@ public class RobotContainer {
         ? new InstantCommand()
         : new ElevatorCallibrationCommand(m_elevator);
 
-      var drivetrainCallibration = new InstantCommand(() -> m_drivetrain.runOnce(
+      /*var drivetrainCallibration = new InstantCommand(() -> m_drivetrain.runOnce(
         () -> m_drivetrain.seedFieldCentric()
-      ));
+      ));*/
 
       var wristCallibration = m_wrist.withinSafeRange()
         ? new InstantCommand()
@@ -170,7 +179,7 @@ public class RobotContainer {
       return new ParallelCommandGroup(
         climberCallibration,
         elevatorCallibration,
-        drivetrainCallibration,
+        //drivetrainCallibration,
         wristCallibration
       );
     }
@@ -182,10 +191,7 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    if (Utils.isSimulation()) {
-      return new SimAutoCommand(m_drivetrain);
-    }
-    return null;
+    return autoChooser.getSelected();
   }
 
   public void stopAllOnDisable() {
