@@ -8,16 +8,28 @@ public class WristMoveToCommand extends Command {
     private final WristSubsystem m_wrist;
     private final Angle m_target;
 
+    private boolean done = false;
+
     public WristMoveToCommand(WristSubsystem wrist, Angle target) {
         this.m_wrist = wrist;
         this.m_target = target;
     }
 
     @Override
+    public void initialize() {
+        done = false;
+    }
+
+    @Override
     public void execute() {
         if (m_wrist.moveWristTo(m_target)) {
-            cancel();
+            done = true;
         }
+    }
+
+    @Override
+    public boolean isFinished() {
+        return done;
     }
 
     @Override

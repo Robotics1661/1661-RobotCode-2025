@@ -1,6 +1,8 @@
 package frc.robot.subsystems;
 
 import static frc.robot.util.MathUtil.clamp;
+import static frc.robot.util.MathUtil.remap;
+
 import java.util.function.DoubleConsumer;
 
 import com.ctre.phoenix6.configs.FeedbackConfigs;
@@ -92,6 +94,7 @@ public class WristSubsystem extends CustomSubsystemBase {
         configurePID();
 
         ntPutString("Control", "StaticBrake");
+        ntPutNumber("smart move limit", 1.0);
     }
 
     @SuppressWarnings("unused")
@@ -177,7 +180,7 @@ public class WristSubsystem extends CustomSubsystemBase {
         return moveWristToInternal(angle);
     }
 
-    private static final double epsilonRot = 0.02;
+    private static final double epsilonRot = 0.1;
 
     private boolean moveWristToInternal(Angle angle) {
         if (m_copy_pos_timer != null) {
@@ -225,6 +228,39 @@ public class WristSubsystem extends CustomSubsystemBase {
             }
         } else {
             ntPutString("Control", "DutyCycleOut("+rate+")");
+
+            // smart-limit the rate
+            {
+                double limit = 1.;
+                final double motorRot = m_wrist.m_wrapped.getPosition().getValue().in(Units.Rotations);
+                final double topOuterBound = Constants.MANIPULATOR_WRIST_MAX.in(Units.Rotations);
+                final double bottomOuterBound = Constants.MANIPULATOR_WRIST_MIN.in(Units.Rotations);
+                final double buffer = Constants.MANIPULATOR_WRIST_SLOW_BUFFER.in(Units.Rotations);
+                final double topInnerBound = topOuterBound - buffer;
+                final double bottomInnerBound = bottomOuterBound + buffer;
+
+                if (rate > 0. && motorRot >= topInnerBound) {
+                    // 0 is at bottom (outside) of buffer, 1 is at top (inside) of buffer
+                    final double factor = clamp((motorRot - topInnerBound) / buffer, 0., 1.);
+                    limit = 1. - factor;
+                } else if (rate < 0. && motorRot <= bottomInnerBound) {
+                    // 0 is at top (outside) of buffer, 1 is at bottom (inside) of buffer
+                    final double factor = clamp((bottomInnerBound - motorRot) / buffer, 0., 1.);
+                    limit = 1. - factor;
+                }
+
+                limit = remap(
+                    limit,
+                    0., 1.,
+                    0.2, 1.
+                );
+
+                ntPutNumber("smart move limit", limit);
+
+                //rate = clamp(rate, -limit, limit);
+                rate *= limit;
+            }
+
             m_wrist.setControl(getPooledDutyCycleOut(null, rate));
             activeBrakeTarget = null;
         }

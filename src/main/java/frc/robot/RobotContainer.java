@@ -17,8 +17,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
-import frc.robot.commands.ClimberCallibrationCommand;
-import frc.robot.commands.ClimberManualCommand;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ElevatorManualCommand;
 import frc.robot.commands.IntakeManualCommand;
@@ -27,9 +25,7 @@ import frc.robot.commands.WristMoveToCommand;
 import frc.robot.commands.ElevatorMoveToCommand;
 import frc.robot.commands.testing.ElevatorSysIdCommand;
 import frc.robot.commands.testing.ElevatorWristTestCommand;
-import frc.robot.commands.util.EmptyDefaultCommand;
 import frc.robot.generated.TunerConstants;
-import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
@@ -66,7 +62,7 @@ public class RobotContainer {
   private final ElevatorSubsystem m_elevator = new ElevatorSubsystem();
   private final WristSubsystem m_wrist = new WristSubsystem();
   private final IntakeSubsystem m_intake = new IntakeSubsystem();
-  private final ClimberSubsystem m_climber = new ClimberSubsystem();
+  //private final ClimberSubsystem m_climber = new ClimberSubsystem();
   private final CommandSwerveDrivetrain m_drivetrain = TunerConstants.createDrivetrain();
 
   // Controllers
@@ -117,10 +113,11 @@ public class RobotContainer {
       m_intake,
       m_combined_controller.INTAKE_CORAL::get,
       m_combined_controller.INTAKE_ALGAE::get,
-      m_combined_controller.DROP_GAMEPIECE::get
+      m_combined_controller.DROP_GAMEPIECE::get,
+      m_combined_controller.DROP_SLOW::get
     ));
 
-    m_climber.setDefaultCommand(Constants.DISABLE_CLIMB
+    /*m_climber.setDefaultCommand(Constants.DISABLE_CLIMB
       ? new EmptyDefaultCommand<>(m_climber)
       : new ClimberManualCommand(
         m_climber,
@@ -128,7 +125,7 @@ public class RobotContainer {
         m_combined_controller.CLIMB_UNLOCK::get,
         m_combined_controller.CLIMB_UP::get,
         m_combined_controller.CLIMB_DOWN::get
-    ));
+    ));*/
 
     if (Constants.DO_ELEVATOR_WRIST_CALLIBRATION) {
       m_combined_controller.ELEVATOR_WRIST_TEST.getTrigger().whileTrue(new ElevatorWristTestCommand(
@@ -153,13 +150,13 @@ public class RobotContainer {
   }
 
   @SuppressWarnings("unused")
-  public Command getInitCommand() {
+  public Command getInitCommand(boolean auto) {
     if (Constants.SKIP_INIT) {
       return null;
     } else {
-      var climberCallibration = (m_climber.isCallibrated() || Constants.DISABLE_CLIMB)
+      /*var climberCallibration = (m_climber.isCallibrated() || Constants.DISABLE_CLIMB)
         ? new InstantCommand()
-        : new ClimberCallibrationCommand(m_climber);
+        : new ClimberCallibrationCommand(m_climber);*/
 
       var elevatorCallibration = m_elevator.isCallibrated()
         ? new InstantCommand()
@@ -169,15 +166,15 @@ public class RobotContainer {
         () -> m_drivetrain.seedFieldCentric()
       ));*/
 
-      var wristCallibration = m_wrist.withinSafeRange()
+      var wristCallibration = (m_wrist.withinSafeRange()/* || !auto*/)
         ? new InstantCommand()
         : new WristMoveToCommand(
           m_wrist,
           Constants.MANIPULATOR_WRIST_MAX.plus(Constants.MANIPULATOR_WRIST_MIN).div(2.0)
-        );
+        ).andThen(new InstantCommand(() -> System.out.println("Wrist callibration complete")));
 
       return new ParallelCommandGroup(
-        climberCallibration,
+        //climberCallibration,
         elevatorCallibration,
         //drivetrainCallibration,
         wristCallibration
@@ -197,7 +194,8 @@ public class RobotContainer {
   public void stopAllOnDisable() {
     m_elevator.disableStop();
     m_wrist.disableStop();
-    m_climber.stop();
+    m_intake.disableStop();
+    //m_climber.stop();
   }
 
   private static DoubleSupplier deadband(DoubleSupplier supplier, double deadband) {

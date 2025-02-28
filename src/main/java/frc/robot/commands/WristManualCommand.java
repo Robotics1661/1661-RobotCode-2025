@@ -20,7 +20,7 @@ public class WristManualCommand extends Command {
     public void execute() {
         super.execute();
 
-        m_wrist.smartMoveRate(m_directionInput.getAsDouble() * -0.25);
+        m_wrist.smartMoveRate(m_directionInput.getAsDouble() * 0.25);
     }
 
     @Override

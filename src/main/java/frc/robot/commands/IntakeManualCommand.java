@@ -9,17 +9,20 @@ public class IntakeManualCommand extends Command {
     private final BooleanSupplier m_intake_coral;
     private final BooleanSupplier m_intake_algae;
     private final BooleanSupplier m_drop;
+    private final BooleanSupplier m_drop_slow;
 
     public IntakeManualCommand(
         IntakeSubsystem intake,
         BooleanSupplier intake_coral,
         BooleanSupplier intake_algae,
-        BooleanSupplier drop
+        BooleanSupplier drop,
+        BooleanSupplier drop_slow
     ) {
         this.m_intake = intake;
         this.m_intake_coral = intake_coral;
         this.m_intake_algae = intake_algae;
         this.m_drop = drop;
+        this.m_drop_slow = drop_slow;
 
         addRequirements(m_intake);
     }
@@ -32,6 +35,8 @@ public class IntakeManualCommand extends Command {
             m_intake.runIntake(0.3, true);
         } else if (m_drop.getAsBoolean()) {
             m_intake.runIntake(-0.25);
+        } else if (m_drop_slow.getAsBoolean()) {
+            m_intake.runIntake(-0.125);
         } else {
             m_intake.runIntake(0.0);
         }

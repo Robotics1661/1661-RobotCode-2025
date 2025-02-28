@@ -203,7 +203,10 @@ public class JoyXboxWrapper {
         /** Intake algae */
         INTAKE_ALGAE = getXBox(XboxController::getLeftBumperButton),
         /** Simply drop held gamepiece, without additional sophistication */
-        DROP_GAMEPIECE = getXBox(x -> x.getRightTriggerAxis() > 0.5)
+        DROP_GAMEPIECE = getXBox(x -> x.getRightTriggerAxis() > 0.5),
+        DROP_SLOW = Constants.DO_ELEVATOR_WRIST_CALLIBRATION
+            ? BooleanButton.never
+            : getXBox(XboxController::getRightBumperButton)
     ;
 
     // Wrist
@@ -217,7 +220,9 @@ public class JoyXboxWrapper {
     ;
     public final BooleanButton
         SYSID_SAFETY = BooleanButton.never,
-        ELEVATOR_WRIST_TEST = getXBox(XboxController::getRightBumperButton)
+        ELEVATOR_WRIST_TEST = Constants.DO_ELEVATOR_WRIST_CALLIBRATION
+            ? getXBox(XboxController::getRightBumperButton)
+            : BooleanButton.never
     ;
 
     public final BooleanButton

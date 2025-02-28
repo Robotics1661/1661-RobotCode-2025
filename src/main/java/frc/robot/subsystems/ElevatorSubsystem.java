@@ -1,6 +1,7 @@
 package frc.robot.subsystems;
 
 import static frc.robot.util.MathUtil.clamp;
+import static frc.robot.util.MathUtil.remap;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.configs.MotionMagicConfigs;
@@ -258,11 +259,23 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
                 if (rate > 0. && motorRot >= topInnerBound) {
                     // 0 is at bottom (outside) of buffer, 1 is at top (inside) of buffer
                     final double factor = clamp((motorRot - topInnerBound) / buffer, 0., 1.);
-                    limit = 1. - factor;
+                    limit = 1. - (factor * factor);
+
+                    limit = remap(
+                        limit,
+                        0., 1.,
+                        0.2, 1.
+                    );
                 } else if (rate < 0. && motorRot <= bottomInnerBound) {
                     // 0 is at top (outside) of buffer, 1 is at bottom (inside) of buffer
                     final double factor = clamp((bottomInnerBound - motorRot) / buffer, 0., 1.);
                     limit = 1. - factor;
+
+                    limit = remap(
+                        limit,
+                        0., 1.,
+                        0.1, 1.
+                    );
                 }
 
                 ntPutNumber("smart move limit", limit);
