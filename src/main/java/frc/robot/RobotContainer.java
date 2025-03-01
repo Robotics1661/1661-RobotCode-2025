@@ -8,8 +8,10 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.events.EventTrigger;
 
+import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.function.Supplier;
 
 import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveRequest;
@@ -24,6 +26,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.Subsystem;
+import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.JoyXboxWrapper.BooleanButton;
 import frc.robot.commands.ElevatorAndWristMoveToCommand;
 import frc.robot.commands.ElevatorCallibrationCommand;
@@ -33,7 +37,6 @@ import frc.robot.commands.WristManualCommand;
 import frc.robot.commands.WristMoveToCommand;
 import frc.robot.commands.ElevatorMoveToCommand;
 import frc.robot.commands.testing.ElevatorSysIdCommand;
-import frc.robot.commands.testing.TestingAutoCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
@@ -43,6 +46,7 @@ import frc.robot.subsystems.ElevatorSubsystem.ElevatorSetPoint;
 import frc.robot.subsystems.WristSubsystem.WristSetPoint;
 import frc.robot.util.DoubleRingBuffer;
 import frc.robot.util.FieldPositioningUtils;
+import frc.robot.util.FieldPositioningUtils.ReefAlignment;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -134,41 +138,34 @@ public class RobotContainer {
 
     // presets
     {
-      final BooleanSupplier presetOverride = JoyXboxWrapper.anyAbove(
-        0.1,
-        m_combined_controller.ELEVATOR_CONTROL,
-        m_combined_controller.WRIST_CONTROL
-      );
-      final BooleanSupplier presetOverrideWithDrive = JoyXboxWrapper.anyAbove(
-        0.1,
-        m_combined_controller.ELEVATOR_CONTROL,
-        m_combined_controller.WRIST_CONTROL,
-        () -> {
-          double x = modifyAxis(m_combined_controller.getLateralY(), "dt_y", true);
-          double y = modifyAxis(m_combined_controller.getLateralX(), "dt_x", true);
+      registerPreset(m_combined_controller.PRESET_INTAKE, ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE, true);
+      m_combined_controller.PRESET_INTAKE.getTrigger()
+      .and(m_combined_controller.DRIVE_TO_PRESET.getTrigger())
+      .onTrue(m_drivetrain.pathfindToNearestIntakeAndPose().until(presetOverrideWithDrive));
 
-          return Math.sqrt(x*x + y*y) * 0.5;
-        }
+      final var reefLeft = m_drivetrain.curryPathfindToNearestReef(
+        ReefAlignment.LEFT,
+        Units.Inches.of(8),
+        Units.Inches.of(0.0)
       );
-      //registerPreset(m_combined_controller.PRESET_INTAKE, ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE, presetOverride);
-      m_combined_controller.PRESET_INTAKE.getTrigger().onTrue(
-        m_drivetrain.pathfindToNearestIntake().until(presetOverrideWithDrive)
+      final var reefCenter = m_drivetrain.curryPathfindToNearestReef(
+        ReefAlignment.CENTER,
+        Units.Inches.of(8),
+        Units.Inches.of(0.0)
+      );
+      final var reefRight = m_drivetrain.curryPathfindToNearestReef(
+        ReefAlignment.RIGHT,
+        Units.Inches.of(8),
+        Units.Inches.of(0.0)
       );
 
-      registerPreset(m_combined_controller.PRESET_REEF_L1, ElevatorSetPoint.L1, WristSetPoint.L1, presetOverride);
-
-      m_combined_controller.PRESET_REEF_LEFT_L2.getTrigger().onTrue(
-        m_drivetrain.pathfindToNearestReef(true).until(presetOverrideWithDrive)
-      );
-      m_combined_controller.PRESET_REEF_RIGHT_L2.getTrigger().onTrue(
-        m_drivetrain.pathfindToNearestReef(false).until(presetOverrideWithDrive)
-      );
-      //registerPreset(m_combined_controller.PRESET_REEF_LEFT_L2, ElevatorSetPoint.L2, WristSetPoint.L2, presetOverride);
-      //registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L2, ElevatorSetPoint.L2, WristSetPoint.L2, presetOverride);
-      registerPreset(m_combined_controller.PRESET_REEF_LEFT_L3, ElevatorSetPoint.L3, WristSetPoint.L3, presetOverride);
-      registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L3, ElevatorSetPoint.L3, WristSetPoint.L3, presetOverride);
-      registerPreset(m_combined_controller.PRESET_REEF_LEFT_L4, ElevatorSetPoint.L4, WristSetPoint.L4, presetOverride);
-      registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L4, ElevatorSetPoint.L4, WristSetPoint.L4, presetOverride);
+      registerPreset(m_combined_controller.PRESET_REEF_L1, ElevatorSetPoint.L1, WristSetPoint.L1, reefCenter);
+      registerPreset(m_combined_controller.PRESET_REEF_LEFT_L2, ElevatorSetPoint.L2, WristSetPoint.L2, reefLeft);
+      registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L2, ElevatorSetPoint.L2, WristSetPoint.L2, reefRight);
+      registerPreset(m_combined_controller.PRESET_REEF_LEFT_L3, ElevatorSetPoint.L3, WristSetPoint.L3, reefLeft);
+      registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L3, ElevatorSetPoint.L3, WristSetPoint.L3, reefRight);
+      registerPreset(m_combined_controller.PRESET_REEF_LEFT_L4, ElevatorSetPoint.L4, WristSetPoint.L4, reefLeft);
+      registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L4, ElevatorSetPoint.L4, WristSetPoint.L4, reefRight);
     }
 
     // triggers
@@ -199,12 +196,72 @@ public class RobotContainer {
     new DebugField();
   }
 
-  private void registerPreset(BooleanButton button, ElevatorSetPoint esp, WristSetPoint wsp, BooleanSupplier cancelSupplier) {
-    button.getTrigger().onTrue(new ElevatorAndWristMoveToCommand(
+  private final BooleanSupplier presetOverride = JoyXboxWrapper.anyAbove(
+    0.1,
+    m_combined_controller.ELEVATOR_CONTROL,
+    m_combined_controller.WRIST_CONTROL
+  );
+
+  private final BooleanSupplier presetOverrideWithDrive = JoyXboxWrapper.anyAbove(
+    0.1,
+    m_combined_controller.ELEVATOR_CONTROL,
+    m_combined_controller.WRIST_CONTROL,
+    () -> {
+      double x = modifyAxis(m_combined_controller.getLateralY(), "dt_y", true);
+      double y = modifyAxis(m_combined_controller.getLateralX(), "dt_x", true);
+
+      return Math.sqrt(x*x + y*y) * 0.5;
+    }
+  );
+
+  @SuppressWarnings("unused")
+  private void registerPreset(
+    BooleanButton button,
+    ElevatorSetPoint esp,
+    WristSetPoint wsp
+  ) {
+    registerPreset(button, esp, wsp, false);
+  }
+
+  private void registerPreset(
+    BooleanButton button,
+    ElevatorSetPoint esp,
+    WristSetPoint wsp,
+    boolean hasSeparateDrive
+  ) {
+    Trigger trigger = button.getTrigger();
+    if (hasSeparateDrive) {
+      trigger = trigger.and(m_combined_controller.DRIVE_TO_PRESET.getTrigger().negate());
+    }
+    trigger.onTrue(new ElevatorAndWristMoveToCommand(
       m_elevator, m_wrist,
       esp, wsp,
-      cancelSupplier
+      presetOverride
     ));
+  }
+
+  private void registerPreset(
+    BooleanButton button,
+    ElevatorSetPoint esp,
+    WristSetPoint wsp,
+    BiFunction<Supplier<Command>, Subsystem[], Command> driveFactory 
+  ) {
+    button.getTrigger()
+      .and(m_combined_controller.DRIVE_TO_PRESET.getTrigger().negate())
+      .onTrue(new ElevatorAndWristMoveToCommand(
+        m_elevator, m_wrist,
+        esp, wsp
+      ).until(presetOverride));
+
+    button.getTrigger()
+      .and(m_combined_controller.DRIVE_TO_PRESET.getTrigger())
+      .onTrue(driveFactory.apply(
+        () -> new ElevatorAndWristMoveToCommand(
+          m_elevator, m_wrist,
+          esp, wsp
+        ),
+        new Subsystem[] {m_elevator, m_wrist}
+      ).until(presetOverrideWithDrive));
   }
 
   private void registerPreset(String eventName, ElevatorSetPoint esp, WristSetPoint wsp) {
@@ -254,9 +311,6 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
-    if (Utils.isSimulation()) {
-      return TestingAutoCommand.create(m_drivetrain);
-    }
     return autoChooser.getSelected();
   }
 

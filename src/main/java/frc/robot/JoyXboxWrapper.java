@@ -180,6 +180,9 @@ public class JoyXboxWrapper {
         PRESET_INTAKE = getXBox(XboxController::getYButton),
         PRESET_REEF_ALGAE = getXBox(XboxController::getXButton) // TODO
     ;
+    public final BooleanButton
+        DRIVE_TO_PRESET = getFlightButton(6)
+    ;
 
     // Aux drive buttons
     public final BooleanButton
@@ -225,7 +228,7 @@ public class JoyXboxWrapper {
     ;
     public final BooleanButton
         SYSID_SAFETY = BooleanButton.never,
-        SET_POSE_FROM_LIMELIGHT = getFlightButton(6)
+        SET_POSE_FROM_LIMELIGHT = BooleanButton.never
     ;
 
     public final BooleanButton

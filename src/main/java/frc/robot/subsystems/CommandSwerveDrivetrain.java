@@ -3,8 +3,10 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.*;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Supplier;
 
 import org.json.simple.parser.ParseException;
@@ -18,6 +20,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.controllers.PathFollowingController;
 import com.pathplanner.lib.path.GoalEndState;
 import com.pathplanner.lib.path.IdealStartingState;
 import com.pathplanner.lib.path.PathConstraints;
@@ -33,6 +36,7 @@ import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
@@ -43,9 +47,11 @@ import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
+import frc.robot.commands.util.PathfindThenRunThenFollowPath;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.subsystems.VisionSubsystem.PoseLatency;
 import frc.robot.util.FieldPositioningUtils;
+import frc.robot.util.FieldPositioningUtils.ReefAlignment;
 import frc.robot.util.FieldPositioningUtils.ReefHextant;
 
 /**
@@ -353,10 +359,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             this::resetPose,
             this::$getRobotRelativeSpeeds,
             this::$driveRobotRelative,
-            new PPHolonomicDriveController( // based on nothing. at all.
-                new PIDConstants(5.0, 0.0, 0.0),
-                new PIDConstants(5.0, 0.0, 0.0)
-            ),
+            $makeController(),
             Constants.PATHPLANNER_CONFIG,
             this::shouldFlipPath,
             this
@@ -366,37 +369,61 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         registerTelemetry((state) -> odometryUpdate());
     }
 
+    private PathFollowingController $makeController() {
+        return new PPHolonomicDriveController( // based on nothing. at all.
+            new PIDConstants(5.0, 0.0, 0.0),
+            new PIDConstants(5.0, 0.0, 0.0)
+        );
+    }
+
+    private PathConstraints $makePathConstraints() {
+        return new PathConstraints(
+            3.0, 4.0,
+            Math.toRadians(540), Math.toRadians(720)
+        );
+    }
+
+    public Command pathfindTo(PathPlannerPath targetPath, Supplier<Command> runAfterPathfind, Subsystem... extraRequirements) {
+        Set<Subsystem> requirements = new HashSet<>();
+        for (Subsystem req : extraRequirements) {
+            requirements.add(req);
+        }
+        requirements.add(this);
+        return new PathfindThenRunThenFollowPath(
+            targetPath, runAfterPathfind,
+            $makePathConstraints(),
+            this::$getPose,
+            this::$getRobotRelativeSpeeds,
+            (cs, df) -> this.$driveRobotRelative(cs),
+            $makeController(),
+            Constants.PATHPLANNER_CONFIG,
+            this::shouldFlipPath,
+            requirements.toArray(new Subsystem[0])
+        );
+    }
+
     public Command pathfindTo(PathPlannerPath targetPath) {
         return AutoBuilder.pathfindThenFollowPath(
             targetPath,
-            new PathConstraints(
-                3.0, 4.0,
-                Math.toRadians(540), Math.toRadians(720)
-            )
+            $makePathConstraints()
         );
     }
 
     public Command pathfindTo(Pose2d target) {
         return AutoBuilder.pathfindToPoseFlipped(
             target,
-            new PathConstraints(
-                3.0, 4.0,
-                Math.toRadians(540), Math.toRadians(720)
-            )
+            $makePathConstraints()
         );
     }
 
     public Command pathfindToAbsolute(Pose2d target) {
         return AutoBuilder.pathfindToPose(
             target,
-            new PathConstraints(
-                3.0, 4.0,
-                Math.toRadians(540), Math.toRadians(720)
-            )
+            $makePathConstraints()
         );
     }
 
-    public Command pathfindToNearestIntake() {
+    public Command pathfindToNearestIntakeAndPose() {
         return new DeferredCommand(
             () -> {
                 try {
@@ -414,20 +441,39 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         );
     }
 
-    public Command pathfindToNearestReef(boolean left) {
+    public BiFunction<Supplier<Command>, Subsystem[], Command> curryPathfindToNearestReef(
+        ReefAlignment alignment,
+        Distance moveAt,
+        Distance finalTarget
+    ) {
+        return (runAfterPathFind, extraRequirements) -> pathfindToNearestReef(
+            alignment,
+            moveAt,
+            finalTarget,
+            runAfterPathFind,
+            extraRequirements
+        );
+    }
+
+    public Command pathfindToNearestReef(
+        ReefAlignment alignment,
+        Distance moveAt,
+        Distance finalTarget,
+        Supplier<Command> runAfterPathFind,
+        Subsystem... extraRequirements
+    ) {
         return new DeferredCommand(
             () -> {
                 ReefHextant hextant = ReefHextant.fromTranslation(getState().Pose.getTranslation(), m_isRed);
 
-                final var baseRadius = FieldPositioningUtils.reefInnerRadius
-                    .plus(FieldPositioningUtils.robotInnerRadius)
-                    .plus(Units.Inches.of(6.0));
-                final var approachRadius = baseRadius.plus(Units.Inches.of(8.0));
-                final var perpendicular = Units.Inches.of(6.47 * (left ? -1 : 1));
+                final var baseRadius = FieldPositioningUtils.reefInnerRadius.plus(FieldPositioningUtils.robotInnerRadius);
+                final var approachRadius = baseRadius.plus(moveAt);
+                final var targetRadius = baseRadius.plus(finalTarget);
+                final var perpendicular = Units.Inches.of(6.47 * alignment.sign);
 
                 List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
                     hextant.makePose(approachRadius, perpendicular, m_isRed),
-                    hextant.makePose(baseRadius, perpendicular, m_isRed)
+                    hextant.makePose(targetRadius, perpendicular, m_isRed)
                 );
 
                 PathConstraints constraints = new PathConstraints(
@@ -447,7 +493,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     path.preventFlipping = false;
                 }
 
-                return pathfindTo(path);
+                return pathfindTo(path, runAfterPathFind, extraRequirements);
                 /*return pathfindToAbsolute(hextant.makePose(
                     FieldPositioningUtils.reefInnerRadius
                         .plus(FieldPositioningUtils.robotInnerRadius)

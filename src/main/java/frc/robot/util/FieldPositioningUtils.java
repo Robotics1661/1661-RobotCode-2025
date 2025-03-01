@@ -110,4 +110,16 @@ public class FieldPositioningUtils {
             );
         }
     }
+
+    public static enum ReefAlignment {
+        LEFT(-1),
+        CENTER(0),
+        RIGHT(1)
+        ;
+        public final int sign;
+
+        ReefAlignment(int sign) {
+            this.sign = sign;
+        }
+    }
 }
