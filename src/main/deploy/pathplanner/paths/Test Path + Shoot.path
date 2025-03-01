@@ -16,12 +16,28 @@
     },
     {
       "anchor": {
-        "x": 3.629659090909091,
-        "y": 2.8932244318181812
+        "x": 3.510000000004987,
+        "y": 2.27498579544956
       },
       "prevControl": {
-        "x": 2.9815056818181818,
-        "y": 1.6567471590909082
+        "x": 3.010000000004987,
+        "y": 1.4089603916651214
+      },
+      "nextControl": {
+        "x": 3.6350000000049874,
+        "y": 2.4914921463956694
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 3.8490340909140768,
+        "y": 2.8732812499950136
+      },
+      "prevControl": {
+        "x": 3.7240340909140763,
+        "y": 2.656774899048904
       },
       "nextControl": null,
       "isLocked": false,
@@ -35,7 +51,7 @@
       "minWaypointRelativePos": 0.7038703870387037,
       "maxWaypointRelativePos": 1.0,
       "constraints": {
-        "maxVelocity": 3.0,
+        "maxVelocity": 1.0,
         "maxAcceleration": 0.5,
         "maxAngularVelocity": 540.0,
         "maxAngularAcceleration": 720.0,
@@ -47,8 +63,14 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "Raise to L4",
+      "name": "Raise to L1",
       "waypointRelativePos": 0.7236723672367166,
+      "endWaypointRelativePos": null,
+      "command": null
+    },
+    {
+      "name": "Shoot Slow",
+      "waypointRelativePos": 2.0,
       "endWaypointRelativePos": null,
       "command": null
     }

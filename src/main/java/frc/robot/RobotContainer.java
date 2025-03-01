@@ -24,6 +24,7 @@ import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.Subsystem;
@@ -36,6 +37,7 @@ import frc.robot.commands.IntakeManualCommand;
 import frc.robot.commands.WristManualCommand;
 import frc.robot.commands.WristMoveToCommand;
 import frc.robot.commands.ElevatorMoveToCommand;
+import frc.robot.commands.IntakeAutoCommand;
 import frc.robot.commands.testing.ElevatorSysIdCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -176,6 +178,8 @@ public class RobotContainer {
       registerPreset("Raise to L2", ElevatorSetPoint.L2, WristSetPoint.L2);
       registerPreset("Raise to L3", ElevatorSetPoint.L3, WristSetPoint.L3);
       registerPreset("Raise to L4", ElevatorSetPoint.L4, WristSetPoint.L4);
+
+      new EventTrigger("Shoot Slow").onTrue(new IntakeAutoCommand(m_intake, -0.07).withTimeout(5.0));
     }
 
     /*m_climber.setDefaultCommand(Constants.DISABLE_CLIMB

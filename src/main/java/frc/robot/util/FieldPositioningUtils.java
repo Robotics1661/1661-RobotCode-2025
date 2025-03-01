@@ -40,22 +40,25 @@ public class FieldPositioningUtils {
 
     // these are named from a driver's perspective
     public static enum ReefHextant {
-        NEAR(0),
-        NEAR_LEFT(-60),
-        NEAR_RIGHT(60),
-        FAR(180),
-        FAR_LEFT(-120),
-        FAR_RIGHT(120)
+        NEAR(0, true),
+        NEAR_LEFT(-60, false),
+        NEAR_RIGHT(60, false),
+        FAR(180, false),
+        FAR_LEFT(-120, true),
+        FAR_RIGHT(120, true)
         ;
 
         /** the degrees a blue robot has to face in to point at this side of the reef */
         public final double blueFacingDeg;
         /** the degrees a red robot has to face in to point at this side of the reef */
         public final double redFacingDeg;
+        /** whether the corresponding algae is high or low */
+        public final boolean highAlgae;
 
-        ReefHextant(double blueFacingDeg) {
+        ReefHextant(double blueFacingDeg, boolean highAlgae) {
             this.blueFacingDeg = blueFacingDeg;
             this.redFacingDeg = wrap_n180_p180(blueFacingDeg + 180);
+            this.highAlgae = highAlgae;
         }
 
         public static ReefHextant fromTranslation(Translation2d pos, boolean isRed) {
