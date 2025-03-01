@@ -62,4 +62,5 @@ public final class Constants {
     public static final boolean DISABLE_CLIMB = true;
 
     public static final boolean SKIP_INIT = false;
+    public static final boolean USE_CONTROLS_IN_SIM = true;
 }

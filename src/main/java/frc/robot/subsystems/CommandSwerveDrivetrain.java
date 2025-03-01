@@ -2,7 +2,11 @@ package frc.robot.subsystems;
 
 import static edu.wpi.first.units.Units.*;
 
+import java.io.IOException;
+import java.util.Set;
 import java.util.function.Supplier;
+
+import org.json.simple.parser.ParseException;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.Utils;
@@ -15,6 +19,7 @@ import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.util.FileVersionException;
 
 import edu.wpi.first.math.Matrix;
 import edu.wpi.first.math.VecBuilder;
@@ -28,6 +33,8 @@ import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.DeferredCommand;
+import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
@@ -324,8 +331,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     private void $driveRobotRelative(ChassisSpeeds chassisSpeeds) {
         setControl($chassisSpeedsRequest.withSpeeds(chassisSpeeds));
     }
-    
-    private boolean $shouldFlipPath() {
+
+    public boolean shouldFlipPath() {
         return m_isRed;
     }
 
@@ -340,7 +347,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 new PIDConstants(5.0, 0.0, 0.0)
             ),
             Constants.PATHPLANNER_CONFIG,
-            this::$shouldFlipPath,
+            this::shouldFlipPath,
             this
         );
 
@@ -365,6 +372,24 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 3.0, 4.0,
                 Math.toRadians(540), Math.toRadians(720)
             )
+        );
+    }
+
+    public Command pathfindToNearestIntake() {
+        return new DeferredCommand(
+            () -> {
+                try {
+                    if (getState().Pose.getY() > 4.025 ^ shouldFlipPath()) {
+                        return pathfindTo(PathPlannerPath.fromPathFile("Intake A"));
+                    } else {
+                        return pathfindTo(PathPlannerPath.fromPathFile("Intake B"));
+                    }
+                } catch (FileVersionException | IOException | ParseException e) {
+                    e.printStackTrace();
+                    return new InstantCommand();
+                }
+            },
+            Set.of(this)
         );
     }
 

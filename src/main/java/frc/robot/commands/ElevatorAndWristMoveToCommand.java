@@ -2,6 +2,9 @@ package frc.robot.commands;
 
 import java.util.function.BooleanSupplier;
 
+import com.ctre.phoenix6.Utils;
+
+import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.WristSubsystem;
@@ -18,6 +21,23 @@ public class ElevatorAndWristMoveToCommand extends Command {
     private final BooleanSupplier m_cancelSupplier;
 
     private boolean done = false;
+
+    private Timer startTime;
+
+    public ElevatorAndWristMoveToCommand(
+        ElevatorSubsystem elevator,
+        WristSubsystem wrist,
+        ElevatorSetPoint elevatorSetPoint,
+        WristSetPoint wristSetPoint
+    ) {
+        this(
+            elevator,
+            wrist,
+            elevatorSetPoint,
+            wristSetPoint,
+            () -> false
+        );
+    }
 
     public ElevatorAndWristMoveToCommand(
         ElevatorSubsystem elevator,
@@ -38,6 +58,12 @@ public class ElevatorAndWristMoveToCommand extends Command {
     @Override
     public void initialize() {
         done = false;
+        startTime = new Timer();
+        startTime.start();
+
+        if (Utils.isSimulation()) {
+            System.out.println(toString() + " started");
+        }
     }
 
     @Override
@@ -47,10 +73,16 @@ public class ElevatorAndWristMoveToCommand extends Command {
             return;
         }
 
-        boolean elevatorDone = m_elevator.moveTo(m_elevatorSetPoint);
-        boolean wristDone = m_wrist.moveWristTo(m_wristSetPoint);
-        if (elevatorDone && wristDone) {
-            done = true;
+        if (Utils.isSimulation()) {
+            if (startTime.hasElapsed(5.0)) {
+                done = true;
+            }
+        } else {
+            boolean elevatorDone = m_elevator.moveTo(m_elevatorSetPoint);
+            boolean wristDone = m_wrist.moveWristTo(m_wristSetPoint);
+            if (elevatorDone && wristDone) {
+                done = true;
+            }
         }
     }
 
@@ -62,11 +94,18 @@ public class ElevatorAndWristMoveToCommand extends Command {
     @Override
     public void end(boolean interrupted) {
         if (interrupted) {
+            System.out.println(toString() + " interrupted");
             m_wrist.stop();
             m_elevator.stop();
         } else {
+            System.out.println(toString() + " ended naturally");
             m_wrist.moveRate(0);    // keep active brake set point
             m_elevator.moveRate(0); // keep active brake set point
         }
+    }
+
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "(" + m_elevatorSetPoint + ", " + m_wristSetPoint + ")";
     }
 }

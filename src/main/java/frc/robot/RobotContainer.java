@@ -6,13 +6,19 @@ package frc.robot;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.events.EventTrigger;
 
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
+import com.ctre.phoenix6.Utils;
 import com.ctre.phoenix6.swerve.SwerveRequest;
 
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.units.Units;
+import edu.wpi.first.util.sendable.SendableBuilder;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -27,6 +33,7 @@ import frc.robot.commands.WristManualCommand;
 import frc.robot.commands.WristMoveToCommand;
 import frc.robot.commands.ElevatorMoveToCommand;
 import frc.robot.commands.testing.ElevatorSysIdCommand;
+import frc.robot.commands.testing.TestingAutoCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
@@ -35,7 +42,7 @@ import frc.robot.subsystems.WristSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorSetPoint;
 import frc.robot.subsystems.WristSubsystem.WristSetPoint;
 import frc.robot.util.DoubleRingBuffer;
-import frc.robot.util.TriConsumer;
+import frc.robot.util.FieldPositioningUtils;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -99,6 +106,7 @@ public class RobotContainer {
     // reset the field-centric heading
     m_combined_controller.ZERO_GYRO.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric()));
     m_combined_controller.ZERO_GYRO_180.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric180()));
+    m_combined_controller.SET_POSE_FROM_LIMELIGHT.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.useLimelightPoseAnyway()));
 
     // Other things
     m_elevator.setDefaultCommand(new ElevatorManualCommand(
@@ -131,21 +139,36 @@ public class RobotContainer {
         m_combined_controller.ELEVATOR_CONTROL,
         m_combined_controller.WRIST_CONTROL
       );
-      final TriConsumer<BooleanButton, ElevatorSetPoint, WristSetPoint> registerPreset = (button, esp, wsp) -> {
-        button.getTrigger().onTrue(new ElevatorAndWristMoveToCommand(
-          m_elevator, m_wrist,
-          esp, wsp,
-          presetOverride
-        ));
-      };
-      registerPreset.accept(m_combined_controller.PRESET_INTAKE, ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE);
-      registerPreset.accept(m_combined_controller.PRESET_REEF_L1, ElevatorSetPoint.L1, WristSetPoint.L1);
-      registerPreset.accept(m_combined_controller.PRESET_REEF_LEFT_L2, ElevatorSetPoint.L2, WristSetPoint.L2);
-      registerPreset.accept(m_combined_controller.PRESET_REEF_RIGHT_L2, ElevatorSetPoint.L2, WristSetPoint.L2);
-      registerPreset.accept(m_combined_controller.PRESET_REEF_LEFT_L3, ElevatorSetPoint.L3, WristSetPoint.L3);
-      registerPreset.accept(m_combined_controller.PRESET_REEF_RIGHT_L3, ElevatorSetPoint.L3, WristSetPoint.L3);
-      registerPreset.accept(m_combined_controller.PRESET_REEF_LEFT_L4, ElevatorSetPoint.L4, WristSetPoint.L4);
-      registerPreset.accept(m_combined_controller.PRESET_REEF_RIGHT_L4, ElevatorSetPoint.L4, WristSetPoint.L4);
+      /*final BooleanSupplier presetOverrideWithDrive = JoyXboxWrapper.anyAbove(
+        0.1,
+        m_combined_controller.ELEVATOR_CONTROL,
+        m_combined_controller.WRIST_CONTROL,
+        m_drive_forward_buffer::getAverage,
+        m_drive_sideways_buffer::getAverage
+      );*/
+      registerPreset(m_combined_controller.PRESET_INTAKE, ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE, presetOverride);
+      /*m_combined_controller.PRESET_INTAKE.getTrigger().onTrue(
+        m_drivetrain.pathfindToNearestIntake().until(presetOverrideWithDrive)
+      );*/
+
+      registerPreset(m_combined_controller.PRESET_REEF_L1, ElevatorSetPoint.L1, WristSetPoint.L1, presetOverride);
+
+      //registerPreset(m_combined_controller.PRESET_REEF_LEFT_L2, ElevatorSetPoint.L2, WristSetPoint.L2, presetOverride);
+      //registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L2, ElevatorSetPoint.L2, WristSetPoint.L2, presetOverride);
+      registerPreset(m_combined_controller.PRESET_REEF_LEFT_L3, ElevatorSetPoint.L3, WristSetPoint.L3, presetOverride);
+      registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L3, ElevatorSetPoint.L3, WristSetPoint.L3, presetOverride);
+      registerPreset(m_combined_controller.PRESET_REEF_LEFT_L4, ElevatorSetPoint.L4, WristSetPoint.L4, presetOverride);
+      registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L4, ElevatorSetPoint.L4, WristSetPoint.L4, presetOverride);
+    }
+
+    // triggers
+    {
+      registerPreset("Raise to Intake", ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE);
+
+      registerPreset("Raise to L1", ElevatorSetPoint.L1, WristSetPoint.L1);
+      registerPreset("Raise to L2", ElevatorSetPoint.L2, WristSetPoint.L2);
+      registerPreset("Raise to L3", ElevatorSetPoint.L3, WristSetPoint.L3);
+      registerPreset("Raise to L4", ElevatorSetPoint.L4, WristSetPoint.L4);
     }
 
     /*m_climber.setDefaultCommand(Constants.DISABLE_CLIMB
@@ -162,6 +185,20 @@ public class RobotContainer {
 
     autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Chooser", autoChooser);
+
+    new DebugField();
+  }
+
+  private void registerPreset(BooleanButton button, ElevatorSetPoint esp, WristSetPoint wsp, BooleanSupplier cancelSupplier) {
+    button.getTrigger().onTrue(new ElevatorAndWristMoveToCommand(
+      m_elevator, m_wrist,
+      esp, wsp,
+      cancelSupplier
+    ));
+  }
+
+  private void registerPreset(String eventName, ElevatorSetPoint esp, WristSetPoint wsp) {
+    new EventTrigger(eventName).onTrue(new ElevatorAndWristMoveToCommand(m_elevator, m_wrist, esp, wsp));
   }
 
   public Command getSysIdCommand() {
@@ -185,7 +222,7 @@ public class RobotContainer {
         () -> m_drivetrain.seedFieldCentric()
       ));*/
 
-      var wristCallibration = (m_wrist.withinSafeRange() || !auto)
+      var wristCallibration = (m_wrist.withinSafeRange() || !auto || Utils.isSimulation())
         ? new InstantCommand()
         : new WristMoveToCommand(
           m_wrist,
@@ -207,6 +244,9 @@ public class RobotContainer {
    * @return the command to run in autonomous
    */
   public Command getAutonomousCommand() {
+    if (Utils.isSimulation()) {
+      return TestingAutoCommand.create(m_drivetrain);
+    }
     return autoChooser.getSelected();
   }
 
@@ -247,5 +287,67 @@ public class RobotContainer {
     }
 
     return value;
+  }
+
+  private class DebugField {
+    private Pose2d testPose = new Pose2d();
+    // field dimensions: 8.05 m by 17.55 m
+
+    private static void addStaticPose(SendableBuilder builder, String name, Translation2d translation) {
+      addStaticPose(builder, name, new Pose2d(translation, Rotation2d.kZero));
+    }
+
+    private static void addStaticPose(SendableBuilder builder, String name, Pose2d pose) {
+      double[] poseArray = new double[] {
+        pose.getX(),
+        pose.getY(),
+        pose.getRotation().getDegrees()
+      };
+      builder.addDoubleArrayProperty(name,
+        () -> poseArray,
+        null
+      );
+
+      builder.addDoubleProperty(name+"X", () -> poseArray[0], null);
+      builder.addDoubleProperty(name+"Y", () -> poseArray[1], null);
+    }
+
+    public DebugField() {
+      SmartDashboard.putData("DebugField", builder -> {
+        builder.setSmartDashboardType("Field2d");
+
+        addStaticPose(builder, "blueReef", FieldPositioningUtils.blueReefCenter);
+        addStaticPose(builder, "redReef", FieldPositioningUtils.redReefCenter);
+
+        builder.addDoubleArrayProperty("test", () -> new double[] {
+          testPose.getX(),
+          testPose.getY(),
+          testPose.getRotation().getDegrees()
+        }, d -> testPose = new Pose2d(d[0], d[1], new Rotation2d(Units.Degrees.of(d[2]))));
+
+        builder.addDoubleProperty(
+          "testX",
+          () -> testPose.getX(),
+          x -> testPose = new Pose2d(x, testPose.getY(), testPose.getRotation())
+        );
+
+        builder.addDoubleProperty(
+          "testY",
+          () -> testPose.getY(),
+          y -> testPose = new Pose2d(testPose.getX(), y, testPose.getRotation())
+        );
+
+        builder.addDoubleProperty(
+          "Angle To Blue Reef",
+          () -> FieldPositioningUtils.angleToReef(m_drivetrain.getState().Pose.getTranslation(), false).in(Units.Degrees),
+          null
+        );
+        builder.addDoubleProperty(
+          "Angle To Red Reef",
+          () -> FieldPositioningUtils.angleToReef(m_drivetrain.getState().Pose.getTranslation(), true).in(Units.Degrees),
+          null
+        );
+      });
+    }
   }
 }

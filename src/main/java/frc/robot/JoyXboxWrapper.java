@@ -18,8 +18,9 @@ public class JoyXboxWrapper {
     private boolean m_soft_disabled;
     private final boolean m_auto_swap_mode = true; // If true, soft enable if twist is on +
 
+    @SuppressWarnings("unused")
     public JoyXboxWrapper(int xboxPort, int joystickPort) {
-        if (Utils.isSimulation()) {
+        if (Utils.isSimulation() && !Constants.USE_CONTROLS_IN_SIM) {
             m_xbox = Optional.empty();
             m_joystick = Optional.empty();
         } else {
@@ -223,7 +224,8 @@ public class JoyXboxWrapper {
         ELEVATOR_CONTROL = getXBoxDouble(x -> -x.getLeftY())
     ;
     public final BooleanButton
-        SYSID_SAFETY = BooleanButton.never
+        SYSID_SAFETY = BooleanButton.never,
+        SET_POSE_FROM_LIMELIGHT = getFlightButton(6)
     ;
 
     public final BooleanButton
