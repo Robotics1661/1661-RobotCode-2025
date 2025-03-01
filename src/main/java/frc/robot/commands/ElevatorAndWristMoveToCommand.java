@@ -5,6 +5,7 @@ import java.util.function.BooleanSupplier;
 import com.ctre.phoenix6.Utils;
 
 import edu.wpi.first.wpilibj.Timer;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.WristSubsystem;
@@ -74,12 +75,16 @@ public class ElevatorAndWristMoveToCommand extends Command {
         }
 
         if (Utils.isSimulation()) {
-            if (startTime.hasElapsed(5.0)) {
+            if (startTime.hasElapsed(2.0)) {
                 done = true;
             }
+            SmartDashboard.putBoolean("ElevatorWristMoveTo/elevatorDone", done);
+            SmartDashboard.putBoolean("ElevatorWristMoveTo/wristDone", done);
         } else {
             boolean elevatorDone = m_elevator.moveTo(m_elevatorSetPoint);
             boolean wristDone = m_wrist.moveWristTo(m_wristSetPoint);
+            SmartDashboard.putBoolean("ElevatorWristMoveTo/elevatorDone", elevatorDone);
+            SmartDashboard.putBoolean("ElevatorWristMoveTo/wristDone", wristDone);
             if (elevatorDone && wristDone) {
                 done = true;
             }

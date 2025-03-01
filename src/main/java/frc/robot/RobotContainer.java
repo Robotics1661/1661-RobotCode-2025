@@ -8,6 +8,7 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.events.EventTrigger;
 
+import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
@@ -49,6 +50,7 @@ import frc.robot.subsystems.WristSubsystem.WristSetPoint;
 import frc.robot.util.DoubleRingBuffer;
 import frc.robot.util.FieldPositioningUtils;
 import frc.robot.util.FieldPositioningUtils.ReefAlignment;
+import frc.robot.util.FieldPositioningUtils.ReefHextant;
 
 /**
  * This class is where the bulk of the robot should be declared. Since Command-based is a
@@ -168,6 +170,24 @@ public class RobotContainer {
       registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L3, ElevatorSetPoint.L3, WristSetPoint.L3, reefRight);
       registerPreset(m_combined_controller.PRESET_REEF_LEFT_L4, ElevatorSetPoint.L4, WristSetPoint.L4, reefLeft);
       registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L4, ElevatorSetPoint.L4, WristSetPoint.L4, reefRight);
+      
+      // algae
+      final Supplier<Command> poseAlgae = () -> {
+        ReefHextant hextant = ReefHextant.fromTranslation(m_drivetrain.getState().Pose.getTranslation(), m_drivetrain.onRedAlliance());
+        return new ElevatorAndWristMoveToCommand(
+          m_elevator, m_wrist,
+          hextant.highAlgae ? ElevatorSetPoint.ALGAE_HIGH : ElevatorSetPoint.ALGAE_LOW,
+          hextant.highAlgae ? WristSetPoint.ALGAE_HIGH : WristSetPoint.ALGAE_LOW
+        );
+      };
+
+      m_combined_controller.PRESET_REEF_ALGAE.getTrigger()
+      .and(m_combined_controller.DRIVE_TO_PRESET.getTrigger().negate())
+      .onTrue(new DeferredCommand(poseAlgae, Set.of(m_elevator, m_wrist)));
+
+      m_combined_controller.PRESET_REEF_ALGAE.getTrigger()
+      .and(m_combined_controller.DRIVE_TO_PRESET.getTrigger())
+      .onTrue(reefCenter.apply(poseAlgae, new Subsystem[] {m_elevator, m_wrist}));
     }
 
     // triggers

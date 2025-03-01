@@ -178,7 +178,7 @@ public class JoyXboxWrapper {
     public final BooleanButton
         PRESET_REEF_L1 = getXBox(XboxController::getBButton),
         PRESET_INTAKE = getXBox(XboxController::getYButton),
-        PRESET_REEF_ALGAE = getXBox(XboxController::getXButton) // TODO
+        PRESET_REEF_ALGAE = getXBox(XboxController::getXButton)
     ;
     public final BooleanButton
         DRIVE_TO_PRESET = getFlightButton(6)

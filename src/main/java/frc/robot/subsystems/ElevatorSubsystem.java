@@ -167,7 +167,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         L3(44.53),
         L2(24.04),
         L4(75.5),
-        L1(0.1631),
+        L1(0.5),//(0.1631),
         ALGAE_HIGH(38.69),
         ALGAE_LOW(19.13)
         ;
