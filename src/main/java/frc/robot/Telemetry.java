@@ -2,6 +2,7 @@ package frc.robot;
 
 import com.ctre.phoenix6.SignalLogger;
 import com.ctre.phoenix6.swerve.SwerveDrivetrain.SwerveDriveState;
+import com.pathplanner.lib.util.PathPlannerLogging;
 
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
@@ -14,11 +15,13 @@ import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.networktables.StringPublisher;
 import edu.wpi.first.networktables.StructArrayPublisher;
 import edu.wpi.first.networktables.StructPublisher;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.util.Color;
 import edu.wpi.first.wpilibj.util.Color8Bit;
+import frc.robot.util.FieldPositioningUtils;
 
 public class Telemetry {
     private final double MaxSpeed;
@@ -49,7 +52,35 @@ public class Telemetry {
     /* Robot pose for field positioning */
     private final NetworkTable table = inst.getTable("Pose");
     private final DoubleArrayPublisher fieldPub = table.getDoubleArrayTopic("robotPose").publish();
+    private final DoubleArrayPublisher fieldPathPub = table.getDoubleArrayTopic("path").publish();
     private final StringPublisher fieldTypePub = table.getStringTopic(".type").publish();
+
+    {
+        PathPlannerLogging.setLogActivePathCallback(poses -> {
+            if (poses.isEmpty()) {
+                fieldPathPub.set(new double[0]);
+            } else {
+                final int actualSize = poses.size();
+                final int size = Math.max(actualSize, 9); // fill out to 9 so elastic renders it properly
+
+                final double[] poseArray = new double[size * 3];
+                for (int i = 0; i < actualSize; i++) {
+                    final Pose2d pose = poses.get(i);
+                    poseArray[i*3 + 0] = pose.getX();
+                    poseArray[i*3 + 1] = pose.getY();
+                    poseArray[i*3 + 2] = pose.getRotation().getDegrees();
+                }
+
+                for (int i = actualSize; i < size; i++) {
+                    poseArray[i*3 + 0] = poseArray[(actualSize-1)*3 + 0];
+                    poseArray[i*3 + 1] = poseArray[(actualSize-1)*3 + 1];
+                    poseArray[i*3 + 2] = poseArray[(actualSize-1)*3 + 2];
+                }
+
+                fieldPathPub.set(poseArray);
+            }
+        });
+    }
 
     /* Mechanisms to represent the swerve module states */
     private final Mechanism2d[] m_moduleMechanisms = new Mechanism2d[] {
@@ -82,7 +113,7 @@ public class Telemetry {
     private final double[] m_moduleTargetsArray = new double[8];
 
     /** Accept the swerve drive state and telemeterize it to SmartDashboard and SignalLogger. */
-    public void telemeterize(SwerveDriveState state) {
+    public void telemeterize(SwerveDriveState state, boolean isRed) {
         /* Telemeterize the swerve drive state */
         drivePose.set(state.Pose);
         driveSpeeds.set(state.Speeds);
@@ -120,5 +151,20 @@ public class Telemetry {
 
             SmartDashboard.putData("Module " + i, m_moduleMechanisms[i]);
         }
+
+        // custom
+
+        SmartDashboard.putNumber(
+            "Swerve/Angle To Blue Reef",
+            FieldPositioningUtils.angleToReef(state.Pose.getTranslation(), false).in(Units.Degrees)
+        );
+        SmartDashboard.putNumber(
+            "Swerve/Angle To Red Reef",
+            FieldPositioningUtils.angleToReef(state.Pose.getTranslation(), true).in(Units.Degrees)
+        );
+        SmartDashboard.putString(
+            "Swerve/Hextant",
+            FieldPositioningUtils.ReefHextant.fromTranslation(state.Pose.getTranslation(), isRed).toString()
+        );
     }
 }

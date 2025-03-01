@@ -27,6 +27,16 @@ public class MathUtil {
         return v;
     }
 
+    public static double wrap_n180_p180(double v) {
+        while (v >= 360.) {
+            v -= 360.;
+        }
+        while (v <= -180.) {
+            v += 360;
+        }
+        return v > 180. ? v - 360 : v;
+    }
+
     /**
      * Remap {@param v} from {@param min0} - {@param max0} to {@param min1} - {@param max1}
      * @param v value

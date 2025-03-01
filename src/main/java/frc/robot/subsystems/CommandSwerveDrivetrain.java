@@ -3,6 +3,7 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.*;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Supplier;
 
@@ -17,8 +18,11 @@ import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import com.pathplanner.lib.path.GoalEndState;
+import com.pathplanner.lib.path.IdealStartingState;
 import com.pathplanner.lib.path.PathConstraints;
 import com.pathplanner.lib.path.PathPlannerPath;
+import com.pathplanner.lib.path.Waypoint;
 import com.pathplanner.lib.util.FileVersionException;
 
 import edu.wpi.first.math.Matrix;
@@ -28,6 +32,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.numbers.N1;
 import edu.wpi.first.math.numbers.N3;
+import edu.wpi.first.units.Units;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
@@ -40,6 +45,8 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.subsystems.VisionSubsystem.PoseLatency;
+import frc.robot.util.FieldPositioningUtils;
+import frc.robot.util.FieldPositioningUtils.ReefHextant;
 
 /**
  * Class that extends the Phoenix 6 SwerveDrivetrain class and implements
@@ -332,6 +339,10 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         setControl($chassisSpeedsRequest.withSpeeds(chassisSpeeds));
     }
 
+    public boolean onRedAlliance() {
+        return m_isRed;
+    }
+
     public boolean shouldFlipPath() {
         return m_isRed;
     }
@@ -375,6 +386,16 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         );
     }
 
+    public Command pathfindToAbsolute(Pose2d target) {
+        return AutoBuilder.pathfindToPose(
+            target,
+            new PathConstraints(
+                3.0, 4.0,
+                Math.toRadians(540), Math.toRadians(720)
+            )
+        );
+    }
+
     public Command pathfindToNearestIntake() {
         return new DeferredCommand(
             () -> {
@@ -388,6 +409,52 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     e.printStackTrace();
                     return new InstantCommand();
                 }
+            },
+            Set.of(this)
+        );
+    }
+
+    public Command pathfindToNearestReef(boolean left) {
+        return new DeferredCommand(
+            () -> {
+                ReefHextant hextant = ReefHextant.fromTranslation(getState().Pose.getTranslation(), m_isRed);
+
+                final var baseRadius = FieldPositioningUtils.reefInnerRadius
+                    .plus(FieldPositioningUtils.robotInnerRadius)
+                    .plus(Units.Inches.of(6.0));
+                final var approachRadius = baseRadius.plus(Units.Inches.of(8.0));
+                final var perpendicular = Units.Inches.of(6.47 * (left ? -1 : 1));
+
+                List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
+                    hextant.makePose(approachRadius, perpendicular, m_isRed),
+                    hextant.makePose(baseRadius, perpendicular, m_isRed)
+                );
+
+                PathConstraints constraints = new PathConstraints(
+                    3.0, 4.0,
+                    Math.toRadians(540), Math.toRadians(720)
+                );
+
+                PathPlannerPath path = new PathPlannerPath(
+                    waypoints,
+                    constraints,
+                    new IdealStartingState(0.0, hextant.facing(m_isRed)),
+                    new GoalEndState(0.0, hextant.facing(m_isRed))
+                );
+                path.preventFlipping = true;
+                if (m_isRed) {
+                    path = path.flipPath();
+                    path.preventFlipping = false;
+                }
+
+                return pathfindTo(path);
+                /*return pathfindToAbsolute(hextant.makePose(
+                    FieldPositioningUtils.reefInnerRadius
+                        .plus(FieldPositioningUtils.robotInnerRadius)
+                        .plus(Units.Inches.of(2.0)),
+                    Units.Inches.of(6.47 * (left ? -1 : 1)),
+                    m_isRed
+                ));*/
             },
             Set.of(this)
         );

@@ -139,20 +139,30 @@ public class RobotContainer {
         m_combined_controller.ELEVATOR_CONTROL,
         m_combined_controller.WRIST_CONTROL
       );
-      /*final BooleanSupplier presetOverrideWithDrive = JoyXboxWrapper.anyAbove(
+      final BooleanSupplier presetOverrideWithDrive = JoyXboxWrapper.anyAbove(
         0.1,
         m_combined_controller.ELEVATOR_CONTROL,
         m_combined_controller.WRIST_CONTROL,
-        m_drive_forward_buffer::getAverage,
-        m_drive_sideways_buffer::getAverage
-      );*/
-      registerPreset(m_combined_controller.PRESET_INTAKE, ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE, presetOverride);
-      /*m_combined_controller.PRESET_INTAKE.getTrigger().onTrue(
+        () -> {
+          double x = modifyAxis(m_combined_controller.getLateralY(), "dt_y", true);
+          double y = modifyAxis(m_combined_controller.getLateralX(), "dt_x", true);
+
+          return Math.sqrt(x*x + y*y) * 0.5;
+        }
+      );
+      //registerPreset(m_combined_controller.PRESET_INTAKE, ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE, presetOverride);
+      m_combined_controller.PRESET_INTAKE.getTrigger().onTrue(
         m_drivetrain.pathfindToNearestIntake().until(presetOverrideWithDrive)
-      );*/
+      );
 
       registerPreset(m_combined_controller.PRESET_REEF_L1, ElevatorSetPoint.L1, WristSetPoint.L1, presetOverride);
 
+      m_combined_controller.PRESET_REEF_LEFT_L2.getTrigger().onTrue(
+        m_drivetrain.pathfindToNearestReef(true).until(presetOverrideWithDrive)
+      );
+      m_combined_controller.PRESET_REEF_RIGHT_L2.getTrigger().onTrue(
+        m_drivetrain.pathfindToNearestReef(false).until(presetOverrideWithDrive)
+      );
       //registerPreset(m_combined_controller.PRESET_REEF_LEFT_L2, ElevatorSetPoint.L2, WristSetPoint.L2, presetOverride);
       //registerPreset(m_combined_controller.PRESET_REEF_RIGHT_L2, ElevatorSetPoint.L2, WristSetPoint.L2, presetOverride);
       registerPreset(m_combined_controller.PRESET_REEF_LEFT_L3, ElevatorSetPoint.L3, WristSetPoint.L3, presetOverride);
@@ -181,7 +191,7 @@ public class RobotContainer {
         m_combined_controller.CLIMB_DOWN::get
     ));*/
 
-    m_drivetrain.registerTelemetry(logger::telemeterize);
+    m_drivetrain.registerTelemetry(state -> logger.telemeterize(state, m_drivetrain.onRedAlliance()));
 
     autoChooser = AutoBuilder.buildAutoChooser();
     SmartDashboard.putData("Auto Chooser", autoChooser);
@@ -335,17 +345,6 @@ public class RobotContainer {
           "testY",
           () -> testPose.getY(),
           y -> testPose = new Pose2d(testPose.getX(), y, testPose.getRotation())
-        );
-
-        builder.addDoubleProperty(
-          "Angle To Blue Reef",
-          () -> FieldPositioningUtils.angleToReef(m_drivetrain.getState().Pose.getTranslation(), false).in(Units.Degrees),
-          null
-        );
-        builder.addDoubleProperty(
-          "Angle To Red Reef",
-          () -> FieldPositioningUtils.angleToReef(m_drivetrain.getState().Pose.getTranslation(), true).in(Units.Degrees),
-          null
         );
       });
     }
