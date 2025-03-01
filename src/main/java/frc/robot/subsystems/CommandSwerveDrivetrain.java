@@ -325,7 +325,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     // Custom Code
-    private static final boolean ENABLE_LL_VISION_ESTIMATE = true;
     private final VisionSubsystem m_visionSystem = new VisionSubsystem();
     private boolean m_useLimelightPoseAnyway = false;
     private boolean m_isRed = false;
@@ -522,7 +521,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     private void odometryUpdate() {
         //System.out.println("Odometry update");
-        if (ENABLE_LL_VISION_ESTIMATE && !Utils.isSimulation()) {
+        if (Constants.ENABLE_LL_VISION_ESTIMATE && !Utils.isSimulation()) {
             updatePoseEstimatorWithVisionBotPose();
         }
     }
