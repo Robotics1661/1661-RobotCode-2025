@@ -519,6 +519,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         resetRotation(m_isRed ? kBlueAlliancePerspectiveRotation : kRedAlliancePerspectiveRotation);
     }
 
+    @SuppressWarnings("unused")
     private void odometryUpdate() {
         //System.out.println("Odometry update");
         if (Constants.ENABLE_LL_VISION_ESTIMATE && !Utils.isSimulation()) {

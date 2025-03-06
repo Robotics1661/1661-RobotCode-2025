@@ -93,36 +93,55 @@ public class PathfindThenRunThenFollowPath extends SequentialCommandGroup {
 
                             Pose2d startPose = poseSupplier.get();
                             ChassisSpeeds startSpeeds = currentRobotRelativeSpeeds.get();
-                            ChassisSpeeds startFieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(startSpeeds,
-                                    startPose.getRotation());
-                            Rotation2d startHeading = new Rotation2d(startFieldSpeeds.vxMetersPerSecond,
-                                    startFieldSpeeds.vyMetersPerSecond);
+                            ChassisSpeeds startFieldSpeeds = ChassisSpeeds
+                                    .fromRobotRelativeSpeeds(startSpeeds,
+                                            startPose.getRotation());
+
+                            Rotation2d startHeading;
+                            {
+                                final double vx = startFieldSpeeds.vxMetersPerSecond;
+                                final double vy = startFieldSpeeds.vyMetersPerSecond;
+                                if (vx == 0 && vy == 0) {
+                                    startHeading = startPose.getRotation();
+                                } else {
+                                    startHeading = new Rotation2d(vx, vy);
+                                }
+                            }
 
                             Pose2d endWaypoint = new Pose2d(goalPath.getPoint(0).position,
                                     goalPath.getInitialHeading());
-                            boolean shouldFlip = shouldFlipPath.getAsBoolean() && !goalPath.preventFlipping;
+                            boolean shouldFlip = shouldFlipPath.getAsBoolean()
+                                    && !goalPath.preventFlipping;
                             if (shouldFlip) {
                                 endWaypoint = FlippingUtil.flipFieldPose(endWaypoint);
                             }
 
                             GoalEndState endState;
                             if (goalPath.getIdealStartingState() != null) {
-                                Rotation2d endRot = goalPath.getIdealStartingState().rotation();
+                                Rotation2d endRot = goalPath.getIdealStartingState()
+                                        .rotation();
                                 if (shouldFlip) {
                                     endRot = FlippingUtil.flipFieldRotation(endRot);
                                 }
-                                endState = new GoalEndState(goalPath.getIdealStartingState().velocityMPS(), endRot);
+                                endState = new GoalEndState(goalPath
+                                        .getIdealStartingState().velocityMPS(),
+                                        endRot);
                             } else {
-                                endState = new GoalEndState(pathfindingConstraints.maxVelocityMPS(),
+                                endState = new GoalEndState(
+                                        pathfindingConstraints.maxVelocityMPS(),
                                         startPose.getRotation());
                             }
 
                             PathPlannerPath joinPath = new PathPlannerPath(
                                     PathPlannerPath.waypointsFromPoses(
-                                            new Pose2d(startPose.getTranslation(), startHeading), endWaypoint),
+                                            new Pose2d(startPose
+                                                    .getTranslation(),
+                                                    startHeading),
+                                            endWaypoint),
                                     pathfindingConstraints,
                                     new IdealStartingState(
-                                            Math.hypot(startSpeeds.vxMetersPerSecond, startSpeeds.vyMetersPerSecond),
+                                            Math.hypot(startSpeeds.vxMetersPerSecond,
+                                                    startSpeeds.vyMetersPerSecond),
                                             startPose.getRotation()),
                                     endState);
                             joinPath.preventFlipping = true;

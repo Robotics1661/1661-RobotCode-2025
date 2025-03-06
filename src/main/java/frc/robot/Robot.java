@@ -18,6 +18,7 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
+import frc.robot.commands.util.SequentialCommandScheduler;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to
@@ -115,7 +116,11 @@ public class Robot extends TimedRobot {
       if (m_autonomousCommand == null) {
         m_autonomousCommand = m_initCommand;
       } else {
-        m_autonomousCommand = m_initCommand.andThen(m_autonomousCommand);
+        m_autonomousCommand = new SequentialCommandScheduler(
+          m_initCommand,
+          m_autonomousCommand
+        );
+        m_initCommand = null;
       }
     }
 
@@ -148,7 +153,7 @@ public class Robot extends TimedRobot {
       m_initCommand.cancel();
     }
 
-    m_initCommand = m_robotContainer.getInitCommand(true);
+    m_initCommand = m_robotContainer.getInitCommand(false);
     if (m_initCommand != null) {
       m_initCommand.schedule();
     }
