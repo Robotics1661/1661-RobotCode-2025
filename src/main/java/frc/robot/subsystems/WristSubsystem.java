@@ -73,6 +73,7 @@ public class WristSubsystem extends CustomSubsystemBase {
         var encoderConf = m_encoder.getConfigurator();
         encoderConf.apply(new MagnetSensorConfigs()
             .withAbsoluteSensorDiscontinuityPoint(Units.Rotations.of(1.0))
+            .withMagnetOffset(Units.Rotations.of(0.25))
         );
 
         var wristConf = m_wrist.m_wrapped.getConfigurator();
