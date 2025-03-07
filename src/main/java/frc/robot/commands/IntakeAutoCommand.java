@@ -1,9 +1,8 @@
 package frc.robot.commands;
 
-import com.ctre.phoenix6.Utils;
-
 import edu.wpi.first.wpilibj2.command.Command;
 import frc.robot.subsystems.IntakeSubsystem;
+import frc.robot.util.AutonomousDebugger;
 
 public class IntakeAutoCommand extends Command {
     private final IntakeSubsystem m_intake;
@@ -21,9 +20,7 @@ public class IntakeAutoCommand extends Command {
 
     @Override
     public void initialize() {
-        if (Utils.isSimulation()) {
-            System.out.println("Running intake at rate "+m_rate);
-        }
+        AutonomousDebugger.autoDbg("Running intake at rate "+m_rate);
     }
 
     @Override
@@ -34,8 +31,6 @@ public class IntakeAutoCommand extends Command {
     @Override
     public void end(boolean interrupted) {
         m_intake.disableStop();
-        if (Utils.isSimulation()) {
-            System.out.println("Done running intake");
-        }
+        AutonomousDebugger.autoDbg("Done running intake");
     }
 }

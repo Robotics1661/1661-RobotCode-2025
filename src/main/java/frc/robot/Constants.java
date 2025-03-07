@@ -28,9 +28,9 @@ public final class Constants {
     public static final int ELEVATOR_LIMIT_WARN   = 1; // DIO
     public static final int ELEVATOR_LIMIT_BOTTOM = 2; // DIO
 
-    public static final Angle ELEVATOR_MAX = Units.Rotations.of(76.0);
+    public static final Angle ELEVATOR_MAX = Units.Rotations.of(77.6);
     public static final Angle ELEVATOR_MIN = Units.Rotations.zero();
-    public static final Angle ELEVATOR_SLOW_BUFFER = Units.Rotations.of(10.0);
+    public static final Angle ELEVATOR_SLOW_BUFFER = Units.Rotations.of(7.0);
 
     // Manipulator components
     public static final int MANIPULATOR_WRIST   = 22;
@@ -62,6 +62,8 @@ public final class Constants {
     public static final boolean DISABLE_CLIMB = true;
 
     public static final boolean ENABLE_LL_VISION_ESTIMATE = true;
+
+    public static final boolean DO_INIT_AND_AUTO_PARALLEL = false;
 
     public static final boolean SKIP_INIT = false;
     public static final boolean USE_CONTROLS_IN_SIM = true;

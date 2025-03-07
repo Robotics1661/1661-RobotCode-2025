@@ -39,6 +39,7 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -377,7 +378,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
 
     private PathConstraints $makePathConstraints() {
         return new PathConstraints(
-            3.0, 4.0,
+            4.0, 4.0,
             Math.toRadians(540), Math.toRadians(720)
         );
     }
@@ -551,9 +552,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         PoseLatency visionBotPose = m_visionSystem.getPoseLatency();
         // invalid LL data
         if (visionBotPose.pose2d().getX() == 0.0) {
-            //System.out.println("[LL] Invalid LL data");
+            System.out.println("[LL] Invalid LL data");
+            SmartDashboard.putString("LL Status", "Invalid LL data");
             return;
         }
+
+        SmartDashboard.putNumber("LL Last Update", Utils.getCurrentTimeSeconds());
 
         // distance from current pose to vision estimated pose
         double poseDifference = this.getState().Pose.getTranslation()
@@ -567,28 +571,33 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 xyStds = 0.5;
                 degStds = 6;
                 //System.out.println("[LL] >= 2 targets");
+                SmartDashboard.putString("LL Status", ">= 2 targets");
             }
             // 1 target with large area and close to estimated pose
             else if (m_visionSystem.getBestTargetArea() > 0.8 && poseDifference < 0.5) {
                 xyStds = 1.0;
                 degStds = 12;
                 //System.out.println("[LL] 1 big target");
+                SmartDashboard.putString("LL Status", "1 big target");
             }
             // 1 target farther away and estimated pose is close
             else if (m_visionSystem.getBestTargetArea() > 0.1 && poseDifference < 0.3) {
                 xyStds = 2.0;
                 degStds = 30;
                 //System.out.println("[LL] 1 small target");
+                SmartDashboard.putString("LL Status", "1 small target");
             }
             else if (m_useLimelightPoseAnyway) {
                 m_useLimelightPoseAnyway = false;
                 xyStds = 0;
                 degStds = 0;
                 System.out.println("[LL] Using limelight pose anyway");
+                SmartDashboard.putString("LL Status", "Using pose anyway");
             }
             // conditions don't match to add a vision measurement
             else {
                 //System.out.println("[LL] Too large pose difference: "+poseDifference);
+                SmartDashboard.putString("LL Status", "Too large pose difference: "+poseDifference);
                 return;
             }
 
@@ -596,10 +605,13 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 VecBuilder.fill(xyStds, xyStds, Math.toRadians(degStds)));
             addVisionMeasurement(visionBotPose.pose2d(),
                 visionBotPose.timestampSeconds());
+        } else {
+            SmartDashboard.putString("LL Status", "No valid targets");
         }
     }
 
     public void useLimelightPoseAnyway() {
+        System.out.println("Will use limelight pose anyway");
         m_useLimelightPoseAnyway = true;
     }
 }

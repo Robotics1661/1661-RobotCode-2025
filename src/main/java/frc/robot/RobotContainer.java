@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.JoyXboxWrapper.BooleanButton;
@@ -49,6 +50,7 @@ import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.WristSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorSetPoint;
 import frc.robot.subsystems.WristSubsystem.WristSetPoint;
+import frc.robot.util.CallibrationTracker;
 import frc.robot.util.DoubleRingBuffer;
 import frc.robot.util.FieldPositioningUtils;
 import frc.robot.util.StringUtil;
@@ -117,7 +119,7 @@ public class RobotContainer {
     // reset the field-centric heading
     m_combined_controller.ZERO_GYRO.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric()));
     m_combined_controller.ZERO_GYRO_180.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric180()));
-    m_combined_controller.SET_POSE_FROM_LIMELIGHT.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.useLimelightPoseAnyway()));
+    m_combined_controller.SET_POSE_FROM_LIMELIGHT.getTrigger().onTrue(new InstantCommand(() -> m_drivetrain.useLimelightPoseAnyway()));
 
     // Other things
     m_elevator.setDefaultCommand(new ElevatorManualCommand(
@@ -368,11 +370,15 @@ public class RobotContainer {
           Constants.MANIPULATOR_WRIST_MAX.plus(Constants.MANIPULATOR_WRIST_MIN).div(2.0)
         ).andThen(new InstantCommand(() -> System.out.println("Wrist callibration complete")));
 
-      return new ParallelCommandGroup(
-        //climberCallibration,
-        elevatorCallibration,
-        //drivetrainCallibration,
-        wristCallibration
+      return new SequentialCommandGroup(
+        new InstantCommand(() -> CallibrationTracker.reset()),
+        new ParallelCommandGroup(
+          //climberCallibration,
+          elevatorCallibration,
+          //drivetrainCallibration,
+          wristCallibration
+        ),
+        new InstantCommand(() -> CallibrationTracker.markCallibrated())
       );
     }
   }
