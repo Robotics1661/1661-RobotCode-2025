@@ -508,15 +508,18 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     public Command driveBack(Distance distance) {
         return new DeferredCommand(
             () -> {
-                final Pose2d curPose = getState().Pose;
-                final Distance dx = distance.times(curPose.getRotation().getCos());
-                final Distance dy = distance.times(curPose.getRotation().getSin());
-                final Pose2d newPose = new Pose2d(
-                    curPose.getMeasureX().plus(dx),
-                    curPose.getMeasureY().plus(dy),
-                    curPose.getRotation()
+                final Pose2d currentPose = getState().Pose;
+                final Rotation2d rotation = currentPose.getRotation();
+
+                final Distance dx = distance.times(rotation.getCos());
+                final Distance dy = distance.times(rotation.getSin());
+                final Pose2d targetPose = new Pose2d(
+                    currentPose.getMeasureX().minus(dx),
+                    currentPose.getMeasureY().minus(dy),
+                    rotation
                 );
-                return pathfindTo(newPose);
+
+                return pathfindToAbsolute(targetPose);
             },
             Set.of(this)
         );

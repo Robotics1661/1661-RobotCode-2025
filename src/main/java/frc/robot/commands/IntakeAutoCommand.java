@@ -20,11 +20,15 @@ public class IntakeAutoCommand extends Command {
     }
 
     @Override
-    public void execute() {
-        m_intake.runIntake(m_rate);
+    public void initialize() {
         if (Utils.isSimulation()) {
             System.out.println("Running intake at rate "+m_rate);
         }
+    }
+
+    @Override
+    public void execute() {
+        m_intake.runIntake(m_rate);
     }
 
     @Override

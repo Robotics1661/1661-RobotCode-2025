@@ -1,7 +1,9 @@
 package frc.robot.commands;
 
 import edu.wpi.first.units.Units;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
+import edu.wpi.first.wpilibj2.command.WaitCommand;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
@@ -35,11 +37,16 @@ public class AutoDriveAimScoreCommand extends SequentialCommandGroup {
                 elevator
             ),
             new IntakeAutoCommand(intake, intake_rate).withTimeout(intake_seconds),
-            drivetrain.driveBack(Units.Inches.of(8.0)),
-            new ElevatorAndWristMoveToCommand(
-                elevator, wrist,
-                ElevatorSetPoint.BASE, WristSetPoint.BASE
-            ).withAlignmentFactor(1.5)
+            new ParallelCommandGroup(
+                drivetrain.driveBack(Units.Meters.of(0.5001)),
+                new SequentialCommandGroup(
+                    new WaitCommand(0.2),
+                    new ElevatorAndWristMoveToCommand(
+                        elevator, wrist,
+                        ElevatorSetPoint.BASE, WristSetPoint.BASE
+                    ).withAlignmentFactor(1.5)
+                )
+            )
         );
     }
 }

@@ -202,7 +202,14 @@ public class RobotContainer {
       registerPreset("Raise to L3", ElevatorSetPoint.L3, WristSetPoint.L3);
       registerPreset("Raise to L4", ElevatorSetPoint.L4, WristSetPoint.L4);
 
-      registerNamedDriveAimScore("Score L1", ReefAlignment.CENTER, ElevatorSetPoint.L1, WristSetPoint.L1, -0.07, 5.0);
+      registerNamedDriveAimScore(
+        "Score L1",
+        ReefAlignment.CENTER,
+        ElevatorSetPoint.L1,
+        WristSetPoint.L1,
+        -0.07,
+        2.0
+      );
       for (ReefAlignment alignment : ReefAlignment.LEFT_RIGHT) {
         for (int L = 2; L <= 4; L++) {
           registerNamedDriveAimScore(
@@ -211,7 +218,7 @@ public class RobotContainer {
             ElevatorSetPoint.L(L),
             WristSetPoint.L(L),
             -0.25,
-            1.0
+            0.75
           );
         }
       }
