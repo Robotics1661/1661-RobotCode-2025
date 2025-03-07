@@ -121,6 +121,11 @@ public class FieldPositioningUtils {
         ;
         public final int sign;
 
+        public static final ReefAlignment[] LEFT_RIGHT = new ReefAlignment[] {
+            ReefAlignment.LEFT,
+            ReefAlignment.RIGHT
+        };
+
         ReefAlignment(int sign) {
             this.sign = sign;
         }

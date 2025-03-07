@@ -6,6 +6,7 @@ package frc.robot;
 
 import com.ctre.phoenix6.swerve.SwerveModule.DriveRequestType;
 import com.pathplanner.lib.auto.AutoBuilder;
+import com.pathplanner.lib.auto.NamedCommands;
 import com.pathplanner.lib.events.EventTrigger;
 
 import java.util.Set;
@@ -31,6 +32,7 @@ import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.JoyXboxWrapper.BooleanButton;
+import frc.robot.commands.AutoDriveAimScoreCommand;
 import frc.robot.commands.ElevatorAndWristMoveToCommand;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ElevatorManualCommand;
@@ -49,6 +51,7 @@ import frc.robot.subsystems.ElevatorSubsystem.ElevatorSetPoint;
 import frc.robot.subsystems.WristSubsystem.WristSetPoint;
 import frc.robot.util.DoubleRingBuffer;
 import frc.robot.util.FieldPositioningUtils;
+import frc.robot.util.StringUtil;
 import frc.robot.util.FieldPositioningUtils.ReefAlignment;
 import frc.robot.util.FieldPositioningUtils.ReefHextant;
 
@@ -199,6 +202,20 @@ public class RobotContainer {
       registerPreset("Raise to L3", ElevatorSetPoint.L3, WristSetPoint.L3);
       registerPreset("Raise to L4", ElevatorSetPoint.L4, WristSetPoint.L4);
 
+      registerNamedDriveAimScore("Score L1", ReefAlignment.CENTER, ElevatorSetPoint.L1, WristSetPoint.L1, -0.07, 5.0);
+      for (ReefAlignment alignment : ReefAlignment.LEFT_RIGHT) {
+        for (int L = 2; L <= 4; L++) {
+          registerNamedDriveAimScore(
+            StringUtil.titleCase("Score "+alignment.name()+" L"+L),
+            alignment,
+            ElevatorSetPoint.L(L),
+            WristSetPoint.L(L),
+            -0.25,
+            1.0
+          );
+        }
+      }
+
       new EventTrigger("Shoot Slow").onTrue(new IntakeAutoCommand(m_intake, -0.07).withTimeout(5.0));
     }
 
@@ -218,6 +235,30 @@ public class RobotContainer {
     SmartDashboard.putData("Auto Chooser", autoChooser);
 
     new DebugField();
+
+    System.out.println("Blue reef center: "+FieldPositioningUtils.blueReefCenter);
+  }
+
+  private void registerNamedDriveAimScore(
+    String name,
+    ReefAlignment reefAlignment,
+    ElevatorSetPoint esp,
+    WristSetPoint wsp,
+    double intake_rate,
+    double intake_seconds
+  ) {
+    System.out.println("Registering named command '"+name+"'");
+    NamedCommands.registerCommand(
+      name,
+      new AutoDriveAimScoreCommand(
+        m_drivetrain,
+        m_wrist, m_elevator,
+        m_intake,
+        intake_rate, intake_seconds,
+        reefAlignment,
+        wsp, esp
+      )
+    );
   }
 
   private final BooleanSupplier presetOverride = JoyXboxWrapper.anyAbove(

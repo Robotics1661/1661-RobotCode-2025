@@ -180,6 +180,20 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         public String toString() {
             return name() + "(" + rotationValue + ")";
         }
+
+        public static ElevatorSetPoint L(int L) {
+             if (L == 1) {
+                return ElevatorSetPoint.L1;
+            } else if (L == 2) {
+                return ElevatorSetPoint.L2;
+            } else if (L == 3) {
+                return ElevatorSetPoint.L3;
+            } else if (L == 4) {
+                return ElevatorSetPoint.L4;
+            } else {
+                throw new IllegalArgumentException("L must be between 1 and 4, was "+L);
+            }
+        }
     }
 
     /**
@@ -188,11 +202,21 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
      * @return whether we have reached the target
      */
     public boolean moveTo(ElevatorSetPoint setPoint) {
+        return moveTo(setPoint, 1.0);
+    }
+
+    /**
+     * Move to setpoint.
+     * @param setPoint point to move to
+     * @param alignmentFactor >1 means a less-perfect alignment is needed
+     * @return whether we have reached the target
+     */
+    public boolean moveTo(ElevatorSetPoint setPoint, double alignmentFactor) {
         if (!m_callibrated) {
             return false;
         }
         ntPutString("Control", "MoveTo("+setPoint+")");
-        return moveToInternal(setPoint.rotationValue);
+        return moveToInternal(setPoint.rotationValue, alignmentFactor);
     }
 
     /**
@@ -201,16 +225,26 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
      * @return whether we have reached the target
      */
     public boolean moveTo(Angle target) {
+        return moveTo(target, 1.0);
+    }
+
+    /**
+     * Move to set target. {@link #moveTo(ElevatorSetPoint, double)} is prefered
+     * @param target angle to move to
+     * @param alignmentFactor >1 means a less-perfect alignment is needed
+     * @return whether we have reached the target
+     */
+    public boolean moveTo(Angle target, double alignmentFactor) {
         if (!m_callibrated) {
             return false;
         }
         ntPutString("Control", "MoveTo("+target+")");
-        return moveToInternal(target);
+        return moveToInternal(target, alignmentFactor);
     }
 
     private static final double epsilonRot = 0.1;
 
-    private boolean moveToInternal(Angle angle) {
+    private boolean moveToInternal(Angle angle, double alignmentFactor) {
         if (!m_callibrated) {
             return false;
         }
@@ -220,7 +254,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         m_motor.setControl(getPooledMotionMagicVoltage(null, angle));
         activeBrakeTarget = angle;
 
-        return m_motor.m_wrapped.getPosition().getValue().minus(angle).abs(Units.Rotations) < epsilonRot;
+        return m_motor.m_wrapped.getPosition().getValue().minus(angle).abs(Units.Rotations) < epsilonRot * alignmentFactor;
     }
 
     /**

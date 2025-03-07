@@ -21,6 +21,8 @@ public class ElevatorAndWristMoveToCommand extends Command {
 
     private final BooleanSupplier m_cancelSupplier;
 
+    private double m_alignmentFactor = 1.0;
+
     private boolean done = false;
 
     private Timer startTime;
@@ -56,6 +58,11 @@ public class ElevatorAndWristMoveToCommand extends Command {
         addRequirements(m_elevator, m_wrist);
     }
 
+    public ElevatorAndWristMoveToCommand withAlignmentFactor(double alignmentFactor) {
+        this.m_alignmentFactor = alignmentFactor;
+        return this;
+    }
+
     @Override
     public void initialize() {
         done = false;
@@ -81,8 +88,8 @@ public class ElevatorAndWristMoveToCommand extends Command {
             SmartDashboard.putBoolean("ElevatorWristMoveTo/elevatorDone", done);
             SmartDashboard.putBoolean("ElevatorWristMoveTo/wristDone", done);
         } else {
-            boolean elevatorDone = m_elevator.moveTo(m_elevatorSetPoint);
-            boolean wristDone = m_wrist.moveWristTo(m_wristSetPoint);
+            boolean elevatorDone = m_elevator.moveTo(m_elevatorSetPoint, m_alignmentFactor);
+            boolean wristDone = m_wrist.moveWristTo(m_wristSetPoint, m_alignmentFactor);
             SmartDashboard.putBoolean("ElevatorWristMoveTo/elevatorDone", elevatorDone);
             SmartDashboard.putBoolean("ElevatorWristMoveTo/wristDone", wristDone);
             if (elevatorDone && wristDone) {

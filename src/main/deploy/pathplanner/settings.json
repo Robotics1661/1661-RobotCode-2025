@@ -3,9 +3,12 @@
   "robotLength": 0.876,
   "holonomicMode": true,
   "pathFolders": [
+    "Reef Alignments",
     "Preset Alignments"
   ],
-  "autoFolders": [],
+  "autoFolders": [
+    "Single Score"
+  ],
   "defaultMaxVel": 3.0,
   "defaultMaxAccel": 3.0,
   "defaultMaxAngVel": 540.0,

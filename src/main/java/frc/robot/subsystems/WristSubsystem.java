@@ -139,29 +139,50 @@ public class WristSubsystem extends CustomSubsystemBase {
      * @return whether we have reached the target
      */
     public boolean moveWristTo(WristSetPoint setPoint) {
+        return moveWristTo(setPoint, 1.0);
+    }
+
+    /**
+     * Move wrist to setpoint.
+     * @param setPoint point to move to
+     * @param alignmentFactor >1 means a less-perfect alignment is needed
+     * @return whether we have reached the target
+     */
+    public boolean moveWristTo(WristSetPoint setPoint, double alignmentFactor) {
         if (m_copy_pos_timer != null) {
             return false;
         }
         ntPutString("Control", "MotionMagicVoltage("+setPoint+")");
-        return moveWristToInternal(setPoint.rotationValue);
+        return moveWristToInternal(setPoint.rotationValue, alignmentFactor);
     }
 
     /**
      * Move wrist to set angle. {@link #moveWristTo(WristSetPoint)} is prefered
      * @param angle angle to move to
+     * @param alignmentFactor >1 means a less-perfect alignment is needed
      * @return whether we have reached the target
      */
     public boolean moveWristTo(Angle angle) {
+        return moveWristTo(angle, 1.0);
+    }
+
+    /**
+     * Move wrist to set angle. {@link #moveWristTo(WristSetPoint, double)} is prefered
+     * @param angle angle to move to
+     * @param alignmentFactor >1 means a less-perfect alignment is needed
+     * @return whether we have reached the target
+     */
+    public boolean moveWristTo(Angle angle, double alignmentFactor) {
         if (m_copy_pos_timer != null) {
             return false;
         }
         ntPutString("Control", "MotionMagicVoltage("+angle+")");
-        return moveWristToInternal(angle);
+        return moveWristToInternal(angle, alignmentFactor);
     }
 
     private static final double epsilonRot = 0.05;
 
-    private boolean moveWristToInternal(Angle angle) {
+    private boolean moveWristToInternal(Angle angle, double alignmentFactor) {
         if (m_copy_pos_timer != null) {
             return false;
         }
@@ -171,7 +192,7 @@ public class WristSubsystem extends CustomSubsystemBase {
         m_wrist.setControl(getPooledMotionMagicVoltage(null, angle));
         activeBrakeTarget = angle;
 
-        return m_wrist.m_wrapped.getPosition().getValue().minus(angle).abs(Units.Rotations) < epsilonRot;
+        return m_wrist.m_wrapped.getPosition().getValue().minus(angle).abs(Units.Rotations) < epsilonRot * alignmentFactor;
         //m_wrist.setControl(getPooledPositionVoltage(null, setPoint.rotationValue));
     }
 
@@ -293,7 +314,8 @@ public class WristSubsystem extends CustomSubsystemBase {
         L4(0.44799),
         L1(0.6184),
         ALGAE_HIGH(0.49927),
-        ALGAE_LOW(0.503906)
+        ALGAE_LOW(0.503906),
+        BASE(0.4)
         ;
         public final Angle rotationValue;
 
@@ -303,6 +325,22 @@ public class WristSubsystem extends CustomSubsystemBase {
 
         public String toString() {
             return name() + "(" + rotationValue + ")";
+        }
+
+        
+
+        public static WristSetPoint L(int L) {
+             if (L == 1) {
+                return WristSetPoint.L1;
+            } else if (L == 2) {
+                return WristSetPoint.L2;
+            } else if (L == 3) {
+                return WristSetPoint.L3;
+            } else if (L == 4) {
+                return WristSetPoint.L4;
+            } else {
+                throw new IllegalArgumentException("L must be between 1 and 4, was "+L);
+            }
         }
     }
 }

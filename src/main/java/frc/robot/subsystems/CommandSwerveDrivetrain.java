@@ -505,6 +505,23 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         );
     }
 
+    public Command driveBack(Distance distance) {
+        return new DeferredCommand(
+            () -> {
+                final Pose2d curPose = getState().Pose;
+                final Distance dx = distance.times(curPose.getRotation().getCos());
+                final Distance dy = distance.times(curPose.getRotation().getSin());
+                final Pose2d newPose = new Pose2d(
+                    curPose.getMeasureX().plus(dx),
+                    curPose.getMeasureY().plus(dy),
+                    curPose.getRotation()
+                );
+                return pathfindTo(newPose);
+            },
+            Set.of(this)
+        );
+    }
+
     /**
      * Resets the rotation of the robot pose to 0 from the
      * {@link SwerveRequest.ForwardPerspectiveValue#OperatorPerspective}

@@ -3,29 +3,29 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 7.22940340909091,
-        "y": 0.8091619318181813
+        "x": 7.2,
+        "y": 0.8
       },
       "prevControl": null,
       "nextControl": {
-        "x": 6.229403409090914,
-        "y": 0.8091619318181814
+        "x": 6.441717726883605,
+        "y": 1.4519263718223354
       },
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Barge RED BOTTOM"
     },
     {
       "anchor": {
-        "x": 3.629659090909091,
-        "y": 2.8932244318181812
+        "x": 5.49,
+        "y": 2.2929999999999997
       },
       "prevControl": {
-        "x": 2.9815056818181818,
-        "y": 1.6567471590909082
+        "x": 5.82340909090909,
+        "y": 1.9858096590909087
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Reef FAR_RED Approach"
     }
   ],
   "rotationTargets": [],
@@ -42,10 +42,10 @@
   },
   "goalEndState": {
     "velocity": 0,
-    "rotation": 59.99999999999999
+    "rotation": 119.99999999999999
   },
   "reversed": false,
-  "folder": null,
+  "folder": "Reef Alignments",
   "idealStartingState": {
     "velocity": 0,
     "rotation": 0.0
