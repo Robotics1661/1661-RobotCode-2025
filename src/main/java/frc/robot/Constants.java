@@ -61,7 +61,7 @@ public final class Constants {
     public static final boolean DISABLE_SWERVE = false;
     public static final boolean DISABLE_CLIMB = true;
 
-    public static final boolean ENABLE_LL_VISION_ESTIMATE = true;
+    public static final boolean ENABLE_LL_VISION_ESTIMATE = false;
 
     public static final boolean DO_INIT_AND_AUTO_PARALLEL = false;
 

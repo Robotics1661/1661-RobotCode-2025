@@ -313,8 +313,8 @@ public class WristSubsystem extends CustomSubsystemBase {
         L2(0.395),
         L4(0.44799),
         L1(0.6184),
-        ALGAE_HIGH(0.49927),
-        ALGAE_LOW(0.503906),
+        ALGAE_HIGH(0.52),
+        ALGAE_LOW(0.492),
         BASE(0.4)
         ;
         public final Angle rotationValue;

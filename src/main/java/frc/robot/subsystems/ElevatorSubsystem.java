@@ -166,10 +166,10 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
         INTAKE(11.66),
         L3(44.53),
         L2(24.04),
-        L4(75.5),
+        L4(77.0), // 75.5
         L1(0.5),//(0.1631),
-        ALGAE_HIGH(38.69),
-        ALGAE_LOW(19.13)
+        ALGAE_HIGH(39.12),
+        ALGAE_LOW(19.79)
         ;
         public final Angle rotationValue;
 
