@@ -10,6 +10,7 @@ import com.pathplanner.lib.pathfinding.LocalADStar;
 import com.pathplanner.lib.pathfinding.Pathfinding;
 
 import edu.wpi.first.net.PortForwarder;
+import edu.wpi.first.wpilibj.DataLogManager;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj.PowerDistribution.ModuleType;
@@ -62,6 +63,8 @@ public class Robot extends TimedRobot {
 
     // Pre-run classloading
     PathfindingCommand.warmupCommand().schedule();
+
+    DataLogManager.start();
   }
 
   /**
