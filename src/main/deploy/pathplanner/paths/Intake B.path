@@ -24,8 +24,8 @@
         "y": 0.891757089502828
       },
       "nextControl": null,
-      "isLocked": false,
-      "linkedName": null
+      "isLocked": true,
+      "linkedName": "Intake B"
     }
   ],
   "rotationTargets": [],

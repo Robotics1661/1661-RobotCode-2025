@@ -46,6 +46,10 @@ public class IntakeSubsystem extends CustomSubsystemBase {
         }
     }
 
+    public boolean coralReachedEnd() {
+        return m_intake_reached;
+    }
+
     // motion methods
 
     public void runIntake(double rate) {

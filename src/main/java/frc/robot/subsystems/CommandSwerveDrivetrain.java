@@ -584,12 +584,17 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_limelightPoseDisplay.setRobotPose(mt1.pose);
             }
 
-            if (poseDifference > 1.) {
+            if (mt1.pose.getX() == 0.0 && mt1.pose.getY() == 0.0) {
+                doRejectUpdate = true;
+                SmartDashboard.putString("LL Status", "Hallucinating");
+            }
+
+            if (poseDifference > 2.) {
                 if (m_useLimelightPoseAnyway) {
                     m_useLimelightPoseAnyway = false;
                 } else {
                     doRejectUpdate = true;
-                    SmartDashboard.putString("LL Status", "Too far off");
+                    SmartDashboard.putString("LL Status", "Too far off ("+poseDifference+" m)");
                 }
             }
 
@@ -632,12 +637,17 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_limelightPoseDisplay.setRobotPose(mt2.pose);
             }
 
-            if (poseDifference > 1.) {
+            if (mt2.pose.getX() == 0.0 && mt2.pose.getY() == 0.0) {
+                doRejectUpdate = true;
+                SmartDashboard.putString("LL Status", "Hallucinating");
+            }
+
+            if (poseDifference > 2.) {
                 if (m_useLimelightPoseAnyway) {
                     m_useLimelightPoseAnyway = false;
                 } else {
                     doRejectUpdate = true;
-                    SmartDashboard.putString("LL Status", "Too far off");
+                    SmartDashboard.putString("LL Status", "Too far off ("+poseDifference+" m)");
                 }
             }
 

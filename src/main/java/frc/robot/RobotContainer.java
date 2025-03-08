@@ -43,6 +43,7 @@ import frc.robot.commands.WristManualCommand;
 import frc.robot.commands.WristMoveToCommand;
 import frc.robot.commands.ElevatorMoveToCommand;
 import frc.robot.commands.IntakeAutoCommand;
+import frc.robot.commands.IntakeCoralAutoCommand;
 import frc.robot.commands.testing.ElevatorSysIdCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
@@ -120,7 +121,13 @@ public class RobotContainer {
     // reset the field-centric heading
     m_combined_controller.ZERO_GYRO.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric()));
     m_combined_controller.ZERO_GYRO_180.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric180()));
-    m_combined_controller.SET_POSE_FROM_LIMELIGHT.getTrigger().whileTrue(new RepeatCommand(new InstantCommand(() -> m_drivetrain.useLimelightPoseAnyway())));
+    m_combined_controller.SET_POSE_FROM_LIMELIGHT.getTrigger().whileTrue(
+      new RepeatCommand(
+        new InstantCommand(
+          () -> m_drivetrain.useLimelightPoseAnyway()
+        ).ignoringDisable(true)
+      ).ignoringDisable(true)
+    );
 
     // Other things
     m_elevator.setDefaultCommand(new ElevatorManualCommand(
@@ -226,6 +233,8 @@ public class RobotContainer {
           );
         }
       }
+
+      NamedCommands.registerCommand("Intake Coral", new IntakeCoralAutoCommand(m_intake));
 
       new EventTrigger("Shoot Slow").onTrue(new IntakeAutoCommand(m_intake, -0.07).withTimeout(5.0));
     }

@@ -163,7 +163,7 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
 
     public enum ElevatorSetPoint {
         BASE(1.0),
-        INTAKE(11.66),
+        INTAKE(11.66 + (15. / (4*Math.PI))),
         L3(44.53),
         L2(24.04),
         L4(77.0), // 75.5

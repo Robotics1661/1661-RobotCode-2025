@@ -3,10 +3,12 @@
   "robotLength": 0.876,
   "holonomicMode": true,
   "pathFolders": [
-    "Reef Alignments",
-    "Preset Alignments"
+    "Auto Traverses",
+    "Preset Alignments",
+    "Reef Alignments"
   ],
   "autoFolders": [
+    "Double Score",
     "Single Score"
   ],
   "defaultMaxVel": 4.0,
