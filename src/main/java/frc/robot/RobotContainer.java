@@ -156,7 +156,7 @@ public class RobotContainer {
       final var reefLeft = m_drivetrain.curryPathfindToNearestReef(
         ReefAlignment.LEFT,
         Units.Inches.of(8),
-        Units.Inches.of(1.0)
+        Units.Inches.of(0.0)
       );
       final var reefCenter = m_drivetrain.curryPathfindToNearestReef(
         ReefAlignment.CENTER,
@@ -166,7 +166,7 @@ public class RobotContainer {
       final var reefRight = m_drivetrain.curryPathfindToNearestReef(
         ReefAlignment.RIGHT,
         Units.Inches.of(8),
-        Units.Inches.of(1.0)
+        Units.Inches.of(0.0)
       );
 
       registerPreset(m_combined_controller.PRESET_REEF_L1, ElevatorSetPoint.L1, WristSetPoint.L1, reefCenter);
@@ -198,6 +198,7 @@ public class RobotContainer {
 
     // triggers
     {
+      registerPreset("Raise to Base", ElevatorSetPoint.BASE, WristSetPoint.BASE);
       registerPreset("Raise to Intake", ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE);
 
       registerPreset("Raise to L1", ElevatorSetPoint.L1, WristSetPoint.L1);
@@ -341,6 +342,7 @@ public class RobotContainer {
 
   private void registerPreset(String eventName, ElevatorSetPoint esp, WristSetPoint wsp) {
     new EventTrigger(eventName).onTrue(new ElevatorAndWristMoveToCommand(m_elevator, m_wrist, esp, wsp));
+    NamedCommands.registerCommand(eventName, new ElevatorAndWristMoveToCommand(m_elevator, m_wrist, esp, wsp));
   }
 
   public Command getSysIdCommand() {

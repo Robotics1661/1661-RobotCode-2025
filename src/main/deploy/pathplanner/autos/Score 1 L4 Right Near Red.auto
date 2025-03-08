@@ -15,6 +15,25 @@
           "data": {
             "name": "Score Right L4"
           }
+        },
+        {
+          "type": "parallel",
+          "data": {
+            "commands": [
+              {
+                "type": "path",
+                "data": {
+                  "pathName": "Back From NEAR_RED"
+                }
+              },
+              {
+                "type": "named",
+                "data": {
+                  "name": "Raise to Base"
+                }
+              }
+            ]
+          }
         }
       ]
     }

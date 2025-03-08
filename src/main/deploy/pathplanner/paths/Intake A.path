@@ -3,25 +3,25 @@
   "waypoints": [
     {
       "anchor": {
-        "x": 1.8646874999999996,
-        "y": 7.04140625
+        "x": 1.9344886363636364,
+        "y": 6.872
       },
       "prevControl": null,
       "nextControl": {
-        "x": 1.717741186926881,
-        "y": 7.243660498593736
+        "x": 1.7875423232905177,
+        "y": 7.074254248593737
       },
       "isLocked": false,
       "linkedName": null
     },
     {
       "anchor": {
-        "x": 1.6453125,
-        "y": 7.37046875
+        "x": 1.5954545454545452,
+        "y": 7.36
       },
       "prevControl": {
-        "x": 1.7922588130731185,
-        "y": 7.168214501406262
+        "x": 1.7424008585276634,
+        "y": 7.157745751406264
       },
       "nextControl": null,
       "isLocked": false,
@@ -34,7 +34,7 @@
   "eventMarkers": [
     {
       "name": "Raise to Intake",
-      "waypointRelativePos": 0.0,
+      "waypointRelativePos": 0,
       "endWaypointRelativePos": null,
       "command": null
     }

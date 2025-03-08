@@ -11,6 +11,7 @@ import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.WristSubsystem;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorSetPoint;
 import frc.robot.subsystems.WristSubsystem.WristSetPoint;
+import frc.robot.util.AutonomousDebugger;
 
 public class ElevatorAndWristMoveToCommand extends Command {
     private final ElevatorSubsystem m_elevator;
@@ -70,7 +71,7 @@ public class ElevatorAndWristMoveToCommand extends Command {
         startTime.start();
 
         if (Utils.isSimulation()) {
-            System.out.println(toString() + " started");
+            AutonomousDebugger.autoDbg(toString() + " started");
         }
     }
 
@@ -106,11 +107,11 @@ public class ElevatorAndWristMoveToCommand extends Command {
     @Override
     public void end(boolean interrupted) {
         if (interrupted) {
-            System.out.println(toString() + " interrupted");
+            AutonomousDebugger.autoDbg(toString() + " interrupted");
             m_wrist.stop();
             m_elevator.stop();
         } else {
-            System.out.println(toString() + " ended naturally");
+            AutonomousDebugger.autoDbg(toString() + " ended naturally");
             m_wrist.moveRate(0);    // keep active brake set point
             m_elevator.moveRate(0); // keep active brake set point
         }

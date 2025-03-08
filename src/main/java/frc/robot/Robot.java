@@ -19,7 +19,6 @@ import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
-import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import frc.robot.commands.util.SequentialCommandScheduler;
 import frc.robot.limelight.LimelightHelpers;
 import frc.robot.util.AutonomousDebugger;
@@ -124,7 +123,7 @@ public class Robot extends TimedRobot {
     m_autonomousCommand = m_robotContainer.getAutonomousCommand();
 
     if (m_autonomousCommand != null) {
-      m_autonomousCommand = new SequentialCommandGroup(
+      m_autonomousCommand = new SequentialCommandScheduler(
         AutonomousDebugger.autoDbgCmd("Starting real auto"),
         m_autonomousCommand
       );
@@ -147,7 +146,7 @@ public class Robot extends TimedRobot {
     }
 
     if (m_autonomousCommand != null) {
-      m_autonomousCommand = new SequentialCommandGroup(
+      m_autonomousCommand = new SequentialCommandScheduler(
         AutonomousDebugger.markAutoStart(),
         m_autonomousCommand,
         AutonomousDebugger.printAutoEnd()
