@@ -39,9 +39,9 @@ import edu.wpi.first.units.Units;
 import edu.wpi.first.units.measure.Distance;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
@@ -50,7 +50,7 @@ import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
 import frc.robot.Constants;
 import frc.robot.commands.util.PathfindThenRunThenFollowPath;
 import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
-import frc.robot.subsystems.VisionSubsystem.PoseLatency;
+import frc.robot.limelight.LimelightHelpers;
 import frc.robot.util.FieldPositioningUtils;
 import frc.robot.util.FieldPositioningUtils.ReefAlignment;
 import frc.robot.util.FieldPositioningUtils.ReefHextant;
@@ -274,6 +274,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_hasAppliedOperatorPerspective = true;
             });
         }
+
+        odometryUpdate();
     }
 
     private void startSimThread() {
@@ -326,7 +328,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     // Custom Code
-    private final VisionSubsystem m_visionSystem = new VisionSubsystem();
     private boolean m_useLimelightPoseAnyway = false;
     private boolean m_isRed = false;
 
@@ -364,9 +365,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
             this::shouldFlipPath,
             this
         );
-
-        // Hacky way to schedule code into the odometry thread
-        registerTelemetry((state) -> odometryUpdate());
     }
 
     private PathFollowingController $makeController() {
@@ -549,7 +547,95 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
     }
 
     public void updatePoseEstimatorWithVisionBotPose() {
-        PoseLatency visionBotPose = m_visionSystem.getPoseLatency();
+        boolean useMegaTag2 = true;
+        boolean doRejectUpdate = false;
+
+        if (!useMegaTag2) { // MegaTag 1
+            LimelightHelpers.PoseEstimate mt1 = LimelightHelpers.getBotPoseEstimate_wpiBlue("limelight");
+
+            if (mt1 == null) {
+                return;
+            }
+
+            if (mt1.tagCount == 1 && mt1.rawFiducials.length == 1) {
+                if (mt1.rawFiducials[0].ambiguity > .7) {
+                    doRejectUpdate = true;
+                    SmartDashboard.putString("LL Status", "Single tag; Too ambiguous");
+                }
+                if (mt1.rawFiducials[0].distToCamera > 3) {
+                    doRejectUpdate = true;
+                    SmartDashboard.putString("LL Status", "Single tag; Too far away");
+                }
+            }
+
+            if (mt1.tagCount == 0) {
+                doRejectUpdate = true;
+                SmartDashboard.putString("LL Status", "No tags");
+            }
+
+            double poseDifference = this.getState().Pose.getTranslation()
+            .getDistance(mt1.pose.getTranslation());
+
+            if (poseDifference > 1.) {
+                if (m_useLimelightPoseAnyway) {
+                    m_useLimelightPoseAnyway = false;
+                } else {
+                    doRejectUpdate = true;
+                    SmartDashboard.putString("LL Status", "Too far off");
+                }
+            }
+
+            if (!doRejectUpdate) {
+                // use huge angle StdDev b/c we trust the gyro
+                double xyStds = m_useLimelightPoseAnyway ? 0.01 : .5;
+                setVisionMeasurementStdDevs(VecBuilder.fill(xyStds, xyStds, 9999999));
+                addVisionMeasurement(mt1.pose, mt1.timestampSeconds);
+                SmartDashboard.putString("LL Status", "Being integrated");
+            }
+        } else { // MegaTag 2
+            LimelightHelpers.SetRobotOrientation( // most params are unnecesary for MT2
+                "limelight",
+                getState().Pose.getRotation().getDegrees(), 0,
+                0, 0,
+                0, 0
+            );
+            LimelightHelpers.PoseEstimate mt2 = LimelightHelpers.getBotPoseEstimate_wpiBlue_MegaTag2("limelight");
+
+            if (mt2 == null) {
+                return;
+            }
+
+            // reject vision updates if rotating faster than 720 deg/sec
+            if (Math.abs(getState().Speeds.omegaRadiansPerSecond) > Math.toRadians(720)) {
+                doRejectUpdate = true;
+                SmartDashboard.putString("LL Status", "Rotating too fast");
+            }
+
+            if (mt2.tagCount == 0) {
+                doRejectUpdate = true;
+                SmartDashboard.putString("LL Status", "No tags");
+            }
+
+            double poseDifference = this.getState().Pose.getTranslation()
+            .getDistance(mt2.pose.getTranslation());
+
+            if (poseDifference > 1.) {
+                if (m_useLimelightPoseAnyway) {
+                    m_useLimelightPoseAnyway = false;
+                } else {
+                    doRejectUpdate = true;
+                    SmartDashboard.putString("LL Status", "Too far off");
+                }
+            }
+
+            if (!doRejectUpdate) {
+                double xyStds = m_useLimelightPoseAnyway ? 0.01 : .7;
+                setVisionMeasurementStdDevs(VecBuilder.fill(xyStds, xyStds, 9999999));
+                addVisionMeasurement(mt2.pose, mt2.timestampSeconds);
+                SmartDashboard.putString("LL Status", "Being integrated");
+            }
+        }
+        /*PoseLatency visionBotPose = m_visionSystem.getPoseLatency();
         // invalid LL data
         if (visionBotPose.pose2d().getX() == 0.0) {
             System.out.println("[LL] Invalid LL data");
@@ -607,7 +693,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 visionBotPose.timestampSeconds());
         } else {
             SmartDashboard.putString("LL Status", "No valid targets");
-        }
+        }*/
     }
 
     public void useLimelightPoseAnyway() {

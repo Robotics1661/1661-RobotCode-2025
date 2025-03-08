@@ -61,10 +61,16 @@ public final class Constants {
     public static final boolean DISABLE_SWERVE = false;
     public static final boolean DISABLE_CLIMB = true;
 
-    public static final boolean ENABLE_LL_VISION_ESTIMATE = false;
+    public static final boolean ENABLE_LL_VISION_ESTIMATE = true;
 
     public static final boolean DO_INIT_AND_AUTO_PARALLEL = false;
 
     public static final boolean SKIP_INIT = false;
     public static final boolean USE_CONTROLS_IN_SIM = true;
+
+    /*
+     * Notes:
+     * Mr. Carillo says that accelerating at 2 m/s/s while fully extended *should* be OK.
+     * Perhaps start at 1.5 m/s/s?
+     */
 }

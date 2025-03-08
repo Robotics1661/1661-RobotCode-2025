@@ -29,6 +29,7 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.DeferredCommand;
 import edu.wpi.first.wpilibj2.command.InstantCommand;
 import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
+import edu.wpi.first.wpilibj2.command.RepeatCommand;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
@@ -119,7 +120,7 @@ public class RobotContainer {
     // reset the field-centric heading
     m_combined_controller.ZERO_GYRO.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric()));
     m_combined_controller.ZERO_GYRO_180.getTrigger().onTrue(m_drivetrain.runOnce(() -> m_drivetrain.seedFieldCentric180()));
-    m_combined_controller.SET_POSE_FROM_LIMELIGHT.getTrigger().onTrue(new InstantCommand(() -> m_drivetrain.useLimelightPoseAnyway()));
+    m_combined_controller.SET_POSE_FROM_LIMELIGHT.getTrigger().whileTrue(new RepeatCommand(new InstantCommand(() -> m_drivetrain.useLimelightPoseAnyway())));
 
     // Other things
     m_elevator.setDefaultCommand(new ElevatorManualCommand(
@@ -155,7 +156,7 @@ public class RobotContainer {
       final var reefLeft = m_drivetrain.curryPathfindToNearestReef(
         ReefAlignment.LEFT,
         Units.Inches.of(8),
-        Units.Inches.of(0.0)
+        Units.Inches.of(1.0)
       );
       final var reefCenter = m_drivetrain.curryPathfindToNearestReef(
         ReefAlignment.CENTER,
@@ -165,7 +166,7 @@ public class RobotContainer {
       final var reefRight = m_drivetrain.curryPathfindToNearestReef(
         ReefAlignment.RIGHT,
         Units.Inches.of(8),
-        Units.Inches.of(0.0)
+        Units.Inches.of(1.0)
       );
 
       registerPreset(m_combined_controller.PRESET_REEF_L1, ElevatorSetPoint.L1, WristSetPoint.L1, reefCenter);
