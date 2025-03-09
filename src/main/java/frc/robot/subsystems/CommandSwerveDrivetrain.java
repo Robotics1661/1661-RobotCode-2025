@@ -541,7 +541,8 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 final var baseRadius = FieldPositioningUtils.reefInnerRadius.plus(FieldPositioningUtils.robotInnerRadius);
                 final var approachRadius = baseRadius.plus(moveAt);
                 final var targetRadius = baseRadius.plus(finalTarget);
-                final var perpendicular = Units.Inches.of(6.47 * alignment.sign);
+                final double offsetRadius = 6.47 - ((4. / 2.) - (1.75 / 2.)); // subtract (coral radius - reef radius)
+                final var perpendicular = Units.Inches.of(offsetRadius * alignment.sign);
 
                 List<Waypoint> waypoints = PathPlannerPath.waypointsFromPoses(
                     hextant.makePose(approachRadius, perpendicular, m_isRed),
