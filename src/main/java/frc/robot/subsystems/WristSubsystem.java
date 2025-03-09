@@ -309,7 +309,7 @@ public class WristSubsystem extends CustomSubsystemBase {
     // 0.387 - 0.622 rotations
     public enum WristSetPoint {
         INTAKE(0.6206),
-        L3(0.409179),
+        L3(0.4421),
         L2(0.395),
         L4(0.44799),
         L1(0.6184),
