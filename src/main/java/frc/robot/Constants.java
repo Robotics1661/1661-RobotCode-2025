@@ -63,10 +63,10 @@ public final class Constants {
 
     public static final boolean ENABLE_LL_VISION_ESTIMATE = true;
 
-    public static final boolean DO_INIT_AND_AUTO_PARALLEL = false;
+    public static final boolean DO_INIT_AND_AUTO_PARALLEL = true;
 
     public static final boolean SKIP_INIT = false;
-    public static final boolean USE_CONTROLS_IN_SIM = true;
+    public static final boolean USE_CONTROLS_IN_SIM = false;
 
     /*
      * Notes:

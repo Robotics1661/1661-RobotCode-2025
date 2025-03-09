@@ -21,6 +21,7 @@ import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
+import edu.wpi.first.wpilibj2.command.ParallelCommandGroup;
 import edu.wpi.first.wpilibj2.command.SequentialCommandGroup;
 import edu.wpi.first.wpilibj2.command.Subsystem;
 
@@ -64,6 +65,8 @@ public class PathfindThenRunThenFollowPath extends SequentialCommandGroup {
     public PathfindThenRunThenFollowPath(
             PathPlannerPath goalPath,
             Supplier<Command> interimCommand,
+            Subsystem[] interimRequirements,
+            boolean runInterimCommandParallel,
             PathConstraints pathfindingConstraints,
             Supplier<Pose2d> poseSupplier,
             Supplier<ChassisSpeeds> currentRobotRelativeSpeeds,
@@ -71,101 +74,116 @@ public class PathfindThenRunThenFollowPath extends SequentialCommandGroup {
             PathFollowingController controller,
             RobotConfig robotConfig,
             BooleanSupplier shouldFlipPath,
-            Subsystem... requirements) {
-        addCommands(
-                new PathfindingCommand(
-                        goalPath,
-                        pathfindingConstraints,
-                        poseSupplier,
-                        currentRobotRelativeSpeeds,
-                        output,
-                        controller,
-                        robotConfig,
-                        shouldFlipPath,
-                        requirements),
-                // Use a deferred command to generate an on-the-fly path to join
-                // the end of the pathfinding command to the start of the path
-                Commands.defer(
-                        () -> {
-                            if (goalPath.numPoints() < 2) {
-                                return Commands.none();
-                            }
+            Subsystem... driveRequirements
+        ) {
+        var pre0 = new PathfindingCommand(
+            goalPath,
+            pathfindingConstraints,
+            poseSupplier,
+            currentRobotRelativeSpeeds,
+            output,
+            controller,
+            robotConfig,
+            shouldFlipPath,
+            driveRequirements
+        );
 
-                            Pose2d startPose = poseSupplier.get();
-                            ChassisSpeeds startSpeeds = currentRobotRelativeSpeeds.get();
-                            ChassisSpeeds startFieldSpeeds = ChassisSpeeds
-                                    .fromRobotRelativeSpeeds(startSpeeds,
-                                            startPose.getRotation());
+        // Use a deferred command to generate an on-the-fly path to join
+        // the end of the pathfinding command to the start of the path
+        var pre1 = Commands.defer(() -> {
+            if (goalPath.numPoints() < 2) {
+                return Commands.none();
+            }
 
-                            Rotation2d startHeading;
-                            {
-                                final double vx = startFieldSpeeds.vxMetersPerSecond;
-                                final double vy = startFieldSpeeds.vyMetersPerSecond;
-                                if (vx == 0 && vy == 0) {
-                                    startHeading = startPose.getRotation();
-                                } else {
-                                    startHeading = new Rotation2d(vx, vy);
-                                }
-                            }
+            Pose2d startPose = poseSupplier.get();
+            ChassisSpeeds startSpeeds = currentRobotRelativeSpeeds.get();
+            ChassisSpeeds startFieldSpeeds = ChassisSpeeds.fromRobotRelativeSpeeds(startSpeeds, startPose.getRotation());
 
-                            Pose2d endWaypoint = new Pose2d(goalPath.getPoint(0).position,
-                                    goalPath.getInitialHeading());
-                            boolean shouldFlip = shouldFlipPath.getAsBoolean()
-                                    && !goalPath.preventFlipping;
-                            if (shouldFlip) {
-                                endWaypoint = FlippingUtil.flipFieldPose(endWaypoint);
-                            }
+            Rotation2d startHeading;
+            {
+                final double vx = startFieldSpeeds.vxMetersPerSecond;
+                final double vy = startFieldSpeeds.vyMetersPerSecond;
+                if (vx == 0 && vy == 0) {
+                    startHeading = startPose.getRotation();
+                } else {
+                    startHeading = new Rotation2d(vx, vy);
+                }
+            }
 
-                            GoalEndState endState;
-                            if (goalPath.getIdealStartingState() != null) {
-                                Rotation2d endRot = goalPath.getIdealStartingState()
-                                        .rotation();
-                                if (shouldFlip) {
-                                    endRot = FlippingUtil.flipFieldRotation(endRot);
-                                }
-                                endState = new GoalEndState(goalPath
-                                        .getIdealStartingState().velocityMPS(),
-                                        endRot);
-                            } else {
-                                endState = new GoalEndState(
-                                        pathfindingConstraints.maxVelocityMPS(),
-                                        startPose.getRotation());
-                            }
+            Pose2d endWaypoint = new Pose2d(goalPath.getPoint(0).position, goalPath.getInitialHeading());
+            boolean shouldFlip = shouldFlipPath.getAsBoolean() && !goalPath.preventFlipping;
+            if (shouldFlip) {
+                endWaypoint = FlippingUtil.flipFieldPose(endWaypoint);
+            }
 
-                            PathPlannerPath joinPath = new PathPlannerPath(
-                                    PathPlannerPath.waypointsFromPoses(
-                                            new Pose2d(startPose
-                                                    .getTranslation(),
-                                                    startHeading),
-                                            endWaypoint),
-                                    pathfindingConstraints,
-                                    new IdealStartingState(
-                                            Math.hypot(startSpeeds.vxMetersPerSecond,
-                                                    startSpeeds.vyMetersPerSecond),
-                                            startPose.getRotation()),
-                                    endState);
-                            joinPath.preventFlipping = true;
+            GoalEndState endState;
+            if (goalPath.getIdealStartingState() != null) {
+                Rotation2d endRot = goalPath.getIdealStartingState().rotation();
+                if (shouldFlip) {
+                    endRot = FlippingUtil.flipFieldRotation(endRot);
+                }
+                endState = new GoalEndState(goalPath.getIdealStartingState().velocityMPS(), endRot);
+            } else {
+                endState = new GoalEndState(pathfindingConstraints.maxVelocityMPS(), startPose.getRotation());
+            }
 
-                            return new FollowPathCommand(
-                                    joinPath,
-                                    poseSupplier,
-                                    currentRobotRelativeSpeeds,
-                                    output,
-                                    controller,
-                                    robotConfig,
-                                    shouldFlipPath,
-                                    requirements);
-                        },
-                        Set.of(requirements)),
-                Commands.defer(interimCommand, Set.of(requirements)),
-                new FollowPathCommand(
-                        goalPath,
-                        poseSupplier,
-                        currentRobotRelativeSpeeds,
-                        output,
-                        controller,
-                        robotConfig,
-                        shouldFlipPath,
-                        requirements));
+            PathPlannerPath joinPath = new PathPlannerPath(
+                PathPlannerPath.waypointsFromPoses(
+                    new Pose2d(startPose.getTranslation(), startHeading),
+                    endWaypoint
+                ),
+                pathfindingConstraints,
+                new IdealStartingState(
+                    Math.hypot(startSpeeds.vxMetersPerSecond, startSpeeds.vyMetersPerSecond),
+                    startPose.getRotation()
+                ),
+                endState
+            );
+            joinPath.preventFlipping = true;
+
+            return new FollowPathCommand(
+                joinPath,
+                poseSupplier,
+                currentRobotRelativeSpeeds,
+                output,
+                controller,
+                robotConfig,
+                shouldFlipPath,
+                driveRequirements
+            );
+        }, Set.of(driveRequirements));
+
+        var interim = Commands.defer(interimCommand, Set.of(interimRequirements));
+
+        var post = new FollowPathCommand(
+            goalPath,
+            poseSupplier,
+            currentRobotRelativeSpeeds,
+            output,
+            controller,
+            robotConfig,
+            shouldFlipPath,
+            driveRequirements
+        );
+
+        if (runInterimCommandParallel) {
+            addCommands(
+                new ParallelCommandGroup(
+                    new SequentialCommandGroup(
+                        pre0,
+                        pre1
+                    ),
+                    interim
+                ),
+                post
+            );
+        } else {
+            addCommands(
+                pre0,
+                pre1,
+                interim,
+                post
+            );
+        }
     }
 }

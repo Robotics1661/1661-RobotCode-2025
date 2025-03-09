@@ -358,7 +358,6 @@ public class RobotContainer {
     return ElevatorSysIdCommand.create(m_elevator, m_combined_controller.SYSID_SAFETY::get);
   }
 
-  @SuppressWarnings("unused")
   public Command getInitCommand(boolean auto) {
     if (Constants.SKIP_INIT) {
       return null;

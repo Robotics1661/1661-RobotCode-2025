@@ -28,6 +28,7 @@ public class ElevatorCallibrationCommand extends Command {
 
     @Override
     public void end(boolean interrupted) {
+        m_elevator.completeCallibrationNoSettle();
         if (interrupted) {
             m_elevator.disableStop();
         } else {

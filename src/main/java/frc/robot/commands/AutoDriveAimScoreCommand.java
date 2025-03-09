@@ -8,11 +8,16 @@ import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.WristSubsystem;
+import frc.robot.subsystems.CommandSwerveDrivetrain.PathfindingOptions;
 import frc.robot.subsystems.ElevatorSubsystem.ElevatorSetPoint;
 import frc.robot.subsystems.WristSubsystem.WristSetPoint;
 import frc.robot.util.FieldPositioningUtils.ReefAlignment;
 
 public class AutoDriveAimScoreCommand extends SequentialCommandGroup {
+    private static final PathfindingOptions PATHFINDING_OPTIONS = new PathfindingOptions()
+        .withRunPathfindParallel(true)
+        .withMaxAccelerationMPSSq(1.75);
+
     public AutoDriveAimScoreCommand(
         CommandSwerveDrivetrain drivetrain,
         WristSubsystem wrist,
@@ -30,6 +35,7 @@ public class AutoDriveAimScoreCommand extends SequentialCommandGroup {
                 reef_alignment,
                 Units.Inches.of(8),
                 Units.Inches.of(0.0),
+                PATHFINDING_OPTIONS,
                 () -> new SequentialCommandGroup(
                     autoDbgCmd("> Starting ElevatorAndWristMoveTo"),
                     new ElevatorAndWristMoveToCommand(

@@ -8,8 +8,8 @@
       },
       "prevControl": null,
       "nextControl": {
-        "x": 5.714389022902382,
-        "y": 0.8000000000000003
+        "x": 5.7805215259734295,
+        "y": 1.273149528780046
       },
       "isLocked": true,
       "linkedName": "Barge RED BOTTOM"
@@ -20,8 +20,8 @@
         "y": 2.2929999999999997
       },
       "prevControl": {
-        "x": 3.49,
-        "y": 1.2929999999999997
+        "x": 3.879427694474161,
+        "y": 2.0995725009904462
       },
       "nextControl": null,
       "isLocked": true,

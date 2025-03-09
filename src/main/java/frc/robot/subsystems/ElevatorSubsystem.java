@@ -145,7 +145,16 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
             log("callibration settling");
         }
 
-        if (!m_callibrationSettleTimer.hasElapsed(1)) {
+        if (!m_callibrationSettleTimer.hasElapsed(0.75)) {
+            return false;
+        }
+
+        return completeCallibrationNoSettle();
+    }
+
+    public boolean completeCallibrationNoSettle() {
+        if (!(atBottom() || Utils.isSimulation())) {
+            m_callibrationSettleTimer = null;
             return false;
         }
 

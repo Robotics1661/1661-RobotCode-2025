@@ -3,7 +3,6 @@ package frc.robot.subsystems;
 import static edu.wpi.first.units.Units.*;
 
 import java.io.IOException;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.BiFunction;
@@ -385,22 +384,65 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         );
     }
 
-    public Command pathfindTo(PathPlannerPath targetPath, Supplier<Command> runAfterPathfind, Subsystem... extraRequirements) {
-        Set<Subsystem> requirements = new HashSet<>();
-        for (Subsystem req : extraRequirements) {
-            requirements.add(req);
+    public static class PathfindingOptions {
+        private boolean m_runPathfindParallel = false;
+        private double m_maxVelocityMPS = 4.0;
+        private double m_maxAccelerationMPSSq = 4.0;
+        private double m_maxAngularVelocityDegPerSec = 540;
+        private double m_maxAngularAccelerationDegPerSecSq = 540;
+
+        public PathfindingOptions withRunPathfindParallel(boolean runPathfindParallel) {
+            this.m_runPathfindParallel = runPathfindParallel;
+            return this;
         }
-        requirements.add(this);
+
+        public PathfindingOptions withMaxVelocityMPS(double maxVelocityMPS) {
+            this.m_maxVelocityMPS = maxVelocityMPS;
+            return this;
+        }
+
+        public PathfindingOptions withMaxAccelerationMPSSq(double maxAccelerationMPSSq) {
+            this.m_maxAccelerationMPSSq = maxAccelerationMPSSq;
+            return this;
+        }
+
+        public PathfindingOptions withMaxAngularVelocityDegPerSec(double maxAngularVelocityDegPerSec) {
+            this.m_maxAngularVelocityDegPerSec = maxAngularVelocityDegPerSec;
+            return this;
+        }
+
+        public PathfindingOptions withMaxAngularAccelerationDegPerSecSq(double maxAngularAccelerationDegPerSecSq) {
+            this.m_maxAngularAccelerationDegPerSecSq = maxAngularAccelerationDegPerSecSq;
+            return this;
+        }
+
+        private PathConstraints makePathConstraints() {
+            return new PathConstraints(
+                m_maxVelocityMPS, m_maxAccelerationMPSSq,
+                Math.toRadians(m_maxAngularVelocityDegPerSec), Math.toRadians(m_maxAngularAccelerationDegPerSecSq)
+            );
+        }
+
+        private static final PathfindingOptions DEFAULT = new PathfindingOptions();
+    }
+
+    public Command pathfindTo(PathPlannerPath targetPath, Supplier<Command> runAfterPathfind, Subsystem... extraRequirements) {
+        return pathfindTo(targetPath, PathfindingOptions.DEFAULT, runAfterPathfind, extraRequirements);
+    }
+
+    public Command pathfindTo(PathPlannerPath targetPath, PathfindingOptions pathfindingOptions, Supplier<Command> runAfterPathfind, Subsystem... extraRequirements) {
         return new PathfindThenRunThenFollowPath(
             targetPath, runAfterPathfind,
-            $makePathConstraints(),
+            extraRequirements,
+            pathfindingOptions.m_runPathfindParallel,
+            pathfindingOptions.makePathConstraints(),
             this::$getPose,
             this::$getRobotRelativeSpeeds,
             (cs, df) -> this.$driveRobotRelative(cs),
             $makeController(),
             Constants.PATHPLANNER_CONFIG,
             this::shouldFlipPath,
-            requirements.toArray(new Subsystem[0])
+            this
         );
     }
 
@@ -448,10 +490,20 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         Distance moveAt,
         Distance finalTarget
     ) {
+        return curryPathfindToNearestReef(alignment, moveAt, finalTarget, PathfindingOptions.DEFAULT);
+    }
+
+    public BiFunction<Supplier<Command>, Subsystem[], Command> curryPathfindToNearestReef(
+        ReefAlignment alignment,
+        Distance moveAt,
+        Distance finalTarget,
+        PathfindingOptions pathfindingOptions
+    ) {
         return (runAfterPathFind, extraRequirements) -> pathfindToNearestReef(
             alignment,
             moveAt,
             finalTarget,
+            pathfindingOptions,
             runAfterPathFind,
             extraRequirements
         );
@@ -461,6 +513,24 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
         ReefAlignment alignment,
         Distance moveAt,
         Distance finalTarget,
+        Supplier<Command> runAfterPathFind,
+        Subsystem... extraRequirements
+    ) {
+        return pathfindToNearestReef(
+            alignment,
+            moveAt,
+            finalTarget,
+            PathfindingOptions.DEFAULT,
+            runAfterPathFind,
+            extraRequirements
+        );
+    }
+
+    public Command pathfindToNearestReef(
+        ReefAlignment alignment,
+        Distance moveAt,
+        Distance finalTarget,
+        PathfindingOptions pathfindingOptions,
         Supplier<Command> runAfterPathFind,
         Subsystem... extraRequirements
     ) {
@@ -495,7 +565,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                     path.preventFlipping = false;
                 }
 
-                return pathfindTo(path, runAfterPathFind, extraRequirements);
+                return pathfindTo(path, pathfindingOptions, runAfterPathFind, extraRequirements);
                 /*return pathfindToAbsolute(hextant.makePose(
                     FieldPositioningUtils.reefInnerRadius
                         .plus(FieldPositioningUtils.robotInnerRadius)
@@ -572,7 +642,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 }
             }
 
-            if (mt1.tagCount == 0) {
+            if (!doRejectUpdate && mt1.tagCount == 0) {
                 doRejectUpdate = true;
                 SmartDashboard.putString("LL Status", "No tags");
             }
@@ -584,12 +654,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_limelightPoseDisplay.setRobotPose(mt1.pose);
             }
 
-            if (mt1.pose.getX() == 0.0 && mt1.pose.getY() == 0.0) {
+            if (!doRejectUpdate && mt1.pose.getX() == 0.0 && mt1.pose.getY() == 0.0) {
                 doRejectUpdate = true;
                 SmartDashboard.putString("LL Status", "Hallucinating");
             }
 
-            if (poseDifference > 2.) {
+            if (!doRejectUpdate && poseDifference > 2.75) {
                 if (m_useLimelightPoseAnyway) {
                     m_useLimelightPoseAnyway = false;
                 } else {
@@ -625,7 +695,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 SmartDashboard.putString("LL Status", "Rotating too fast");
             }
 
-            if (mt2.tagCount == 0) {
+            if (!doRejectUpdate && mt2.tagCount == 0) {
                 doRejectUpdate = true;
                 SmartDashboard.putString("LL Status", "No tags");
             }
@@ -637,12 +707,12 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
                 m_limelightPoseDisplay.setRobotPose(mt2.pose);
             }
 
-            if (mt2.pose.getX() == 0.0 && mt2.pose.getY() == 0.0) {
+            if (!doRejectUpdate && mt2.pose.getX() == 0.0 && mt2.pose.getY() == 0.0) {
                 doRejectUpdate = true;
                 SmartDashboard.putString("LL Status", "Hallucinating");
             }
 
-            if (poseDifference > 2.) {
+            if (!doRejectUpdate && poseDifference > 2.75) {
                 if (m_useLimelightPoseAnyway) {
                     m_useLimelightPoseAnyway = false;
                 } else {
