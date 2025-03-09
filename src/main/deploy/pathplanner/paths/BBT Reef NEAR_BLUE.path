@@ -1,0 +1,54 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 7.5,
+        "y": 7.250000000000001
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 5.780518833452904,
+        "y": 6.776860256250481
+      },
+      "isLocked": true,
+      "linkedName": "Barge BLUE TOP"
+    },
+    {
+      "anchor": {
+        "x": 3.49,
+        "y": 5.757000000000001
+      },
+      "prevControl": {
+        "x": 3.879429196018642,
+        "y": 5.950424475919739
+      },
+      "nextControl": null,
+      "isLocked": true,
+      "linkedName": "REEF NEAR_BLUE Approach"
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 4.0,
+    "maxAcceleration": 4.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -59.99999999999999
+  },
+  "reversed": false,
+  "folder": "Reef Alignments",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": 0.0
+  },
+  "useDefaultConstraints": true
+}

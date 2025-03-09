@@ -16,16 +16,16 @@
     },
     {
       "anchor": {
-        "x": 1.5954545454545452,
-        "y": 7.36
+        "x": 1.575,
+        "y": 7.460000000000001
       },
       "prevControl": {
-        "x": 1.7424008585276634,
-        "y": 7.157745751406264
+        "x": 1.7219463130731183,
+        "y": 7.257745751406264
       },
       "nextControl": null,
       "isLocked": false,
-      "linkedName": null
+      "linkedName": "Intake A"
     }
   ],
   "rotationTargets": [],

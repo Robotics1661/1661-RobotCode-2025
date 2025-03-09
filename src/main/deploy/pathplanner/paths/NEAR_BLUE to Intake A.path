@@ -1,0 +1,75 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 3.49,
+        "y": 5.757000000000001
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 3.2476186875733455,
+        "y": 5.8182478520956655
+      },
+      "isLocked": false,
+      "linkedName": "REEF NEAR_BLUE Approach"
+    },
+    {
+      "anchor": {
+        "x": 1.575,
+        "y": 7.460000000000001
+      },
+      "prevControl": {
+        "x": 2.0695396949170943,
+        "y": 6.44146921749238
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "Intake A Auton"
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [
+    {
+      "name": "Constraints Zone",
+      "minWaypointRelativePos": 0.0,
+      "maxWaypointRelativePos": 0.4,
+      "constraints": {
+        "maxVelocity": 4.0,
+        "maxAcceleration": 1.75,
+        "maxAngularVelocity": 540.0,
+        "maxAngularAcceleration": 720.0,
+        "nominalVoltage": 12.0,
+        "unlimited": false
+      }
+    }
+  ],
+  "pointTowardsZones": [],
+  "eventMarkers": [
+    {
+      "name": "Raise to Intake",
+      "waypointRelativePos": 0,
+      "endWaypointRelativePos": null,
+      "command": null
+    }
+  ],
+  "globalConstraints": {
+    "maxVelocity": 4.0,
+    "maxAcceleration": 4.0,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": 126.0
+  },
+  "reversed": false,
+  "folder": "Auto Traverses",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -59.99999999999999
+  },
+  "useDefaultConstraints": true
+}
