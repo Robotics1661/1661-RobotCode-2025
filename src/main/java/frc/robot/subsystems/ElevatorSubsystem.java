@@ -401,6 +401,9 @@ public class ElevatorSubsystem extends CustomSubsystemBase {
     }
 
     protected boolean atTop() {
+        if (Constants.IGNORE_ELEVATOR_TOP_LIMIT_SWITCH) {
+            return false;
+        }
         return m_topLimitSwitch.get();
     }
 }

@@ -65,6 +65,8 @@ public final class Constants {
 
     public static final boolean DO_INIT_AND_AUTO_PARALLEL = true;
 
+    public static final boolean IGNORE_ELEVATOR_TOP_LIMIT_SWITCH = true;
+
     public static final boolean SKIP_INIT = false;
     public static final boolean USE_CONTROLS_IN_SIM = false;
 
