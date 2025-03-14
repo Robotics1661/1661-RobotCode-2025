@@ -41,9 +41,7 @@ public final class Constants {
     public static final Angle MANIPULATOR_WRIST_SLOW_BUFFER = Units.Rotations.of(0.05);
 
     // Climber components
-    public static final int CLIMBER_MAGNET           = 25;
-    public static final int CLIMBER_VERTICAL         = 21;
-    public static final int CLIMBER_LIMIT_MAGNET_OFF = 3; // DIO
+    public static final int CLIMBER_MOTOR = 27;
 
     // Drivetrain
     public static final RobotConfig PATHPLANNER_CONFIG = getRobotConfig();
@@ -59,7 +57,7 @@ public final class Constants {
 
     // Flags
     public static final boolean DISABLE_SWERVE = false;
-    public static final boolean DISABLE_CLIMB = true;
+    public static final boolean DISABLE_CLIMB = false;
 
     public static final boolean ENABLE_LL_VISION_ESTIMATE = true;
 

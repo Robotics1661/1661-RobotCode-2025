@@ -35,6 +35,7 @@ import edu.wpi.first.wpilibj2.command.Subsystem;
 import edu.wpi.first.wpilibj2.command.button.Trigger;
 import frc.robot.JoyXboxWrapper.BooleanButton;
 import frc.robot.commands.AutoDriveAimScoreCommand;
+import frc.robot.commands.ClimberManualCommand;
 import frc.robot.commands.ElevatorAndWristMoveToCommand;
 import frc.robot.commands.ElevatorCallibrationCommand;
 import frc.robot.commands.ElevatorManualCommand;
@@ -45,7 +46,9 @@ import frc.robot.commands.ElevatorMoveToCommand;
 import frc.robot.commands.IntakeAutoCommand;
 import frc.robot.commands.IntakeCoralAutoCommand;
 import frc.robot.commands.testing.ElevatorSysIdCommand;
+import frc.robot.commands.util.EmptyDefaultCommand;
 import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
@@ -88,7 +91,7 @@ public class RobotContainer {
   private final ElevatorSubsystem m_elevator = new ElevatorSubsystem();
   private final WristSubsystem m_wrist = new WristSubsystem();
   private final IntakeSubsystem m_intake = new IntakeSubsystem();
-  //private final ClimberSubsystem m_climber = new ClimberSubsystem();
+  private final ClimberSubsystem m_climber = new ClimberSubsystem();
   private final CommandSwerveDrivetrain m_drivetrain = TunerConstants.createDrivetrain();
 
   // Controllers
@@ -239,15 +242,13 @@ public class RobotContainer {
       new EventTrigger("Shoot Slow").onTrue(new IntakeAutoCommand(m_intake, -0.07).withTimeout(5.0));
     }
 
-    /*m_climber.setDefaultCommand(Constants.DISABLE_CLIMB
+    m_climber.setDefaultCommand(Constants.DISABLE_CLIMB
       ? new EmptyDefaultCommand<>(m_climber)
       : new ClimberManualCommand(
         m_climber,
-        m_combined_controller.CLIMB_LOCK::get,
-        m_combined_controller.CLIMB_UNLOCK::get,
         m_combined_controller.CLIMB_UP::get,
         m_combined_controller.CLIMB_DOWN::get
-    ));*/
+    ));
 
     m_drivetrain.registerTelemetry(state -> logger.telemeterize(state, m_drivetrain.onRedAlliance()));
 
@@ -362,10 +363,6 @@ public class RobotContainer {
     if (Constants.SKIP_INIT) {
       return null;
     } else {
-      /*var climberCallibration = (m_climber.isCallibrated() || Constants.DISABLE_CLIMB)
-        ? new InstantCommand()
-        : new ClimberCallibrationCommand(m_climber);*/
-
       var elevatorCallibration = m_elevator.isCallibrated()
         ? new InstantCommand()
         : new ElevatorCallibrationCommand(m_elevator);
@@ -384,7 +381,6 @@ public class RobotContainer {
       return new SequentialCommandGroup(
         new InstantCommand(() -> CallibrationTracker.reset()),
         new ParallelCommandGroup(
-          //climberCallibration,
           elevatorCallibration,
           //drivetrainCallibration,
           wristCallibration

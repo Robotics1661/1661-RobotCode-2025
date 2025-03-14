@@ -200,10 +200,8 @@ public class JoyXboxWrapper {
         CLIMB_UNLOCK = getXBox(XboxController::getXButton)
     ;*/
     public final BooleanButton
-        CLIMB_UP = BooleanButton.never,
-        CLIMB_DOWN = BooleanButton.never,
-        CLIMB_LOCK = BooleanButton.never,
-        CLIMB_UNLOCK = BooleanButton.never
+        CLIMB_UP = getXBoxPOV(p -> p.up),
+        CLIMB_DOWN = getXBoxPOV(p -> p.down)
     ;
 
     // Intake/drop buttons
@@ -228,7 +226,7 @@ public class JoyXboxWrapper {
     ;
     public final BooleanButton
         SYSID_SAFETY = BooleanButton.never,
-        SET_POSE_FROM_LIMELIGHT = getXBoxPOV(p -> p.down)
+        SET_POSE_FROM_LIMELIGHT = BooleanButton.never//getXBoxPOV(p -> p.down)
     ;
 
     public final BooleanButton
