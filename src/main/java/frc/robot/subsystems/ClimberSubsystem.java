@@ -20,7 +20,7 @@ public class ClimberSubsystem extends CustomSubsystemBase {
 
     // Motion methods
 
-    private static double speed = 0.1;
+    private static double speed = 0.2;
 
     public void extend() {
         m_motor.setControl(getPooledVoltageOut(null, Units.Volts.of(12. * speed)));
