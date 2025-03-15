@@ -39,18 +39,6 @@
           "data": {
             "name": "Score Right L4"
           }
-        },
-        {
-          "type": "path",
-          "data": {
-            "pathName": "Back From NEAR_BLUE"
-          }
-        },
-        {
-          "type": "named",
-          "data": {
-            "name": "Raise to Base"
-          }
         }
       ]
     }
