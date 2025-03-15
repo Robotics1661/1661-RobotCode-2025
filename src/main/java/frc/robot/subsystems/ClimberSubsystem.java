@@ -23,11 +23,11 @@ public class ClimberSubsystem extends CustomSubsystemBase {
     private static double speed = 0.2;
 
     public void extend() {
-        m_motor.setControl(getPooledVoltageOut(null, Units.Volts.of(12. * speed)));
+        m_motor.setControl(getPooledVoltageOut(null, Units.Volts.of(-12. * speed)));
     }
 
     public void retract() {
-        m_motor.setControl(getPooledVoltageOut(null, Units.Volts.of(-12. * speed)));
+        m_motor.setControl(getPooledVoltageOut(null, Units.Volts.of(12. * speed)));
     }
 
     public void stop() {
