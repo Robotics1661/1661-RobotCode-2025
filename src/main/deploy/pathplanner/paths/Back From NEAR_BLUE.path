@@ -1,0 +1,54 @@
+{
+  "version": "2025.0",
+  "waypoints": [
+    {
+      "anchor": {
+        "x": 3.6894886363636368,
+        "y": 5.396000000000001
+      },
+      "prevControl": null,
+      "nextControl": {
+        "x": 3.5644886363636368,
+        "y": 5.612506350946111
+      },
+      "isLocked": false,
+      "linkedName": null
+    },
+    {
+      "anchor": {
+        "x": 3.49,
+        "y": 5.757000000000001
+      },
+      "prevControl": {
+        "x": 3.615,
+        "y": 5.540493649053891
+      },
+      "nextControl": null,
+      "isLocked": false,
+      "linkedName": "REEF NEAR_BLUE Approach"
+    }
+  ],
+  "rotationTargets": [],
+  "constraintZones": [],
+  "pointTowardsZones": [],
+  "eventMarkers": [],
+  "globalConstraints": {
+    "maxVelocity": 4.0,
+    "maxAcceleration": 1.75,
+    "maxAngularVelocity": 540.0,
+    "maxAngularAcceleration": 720.0,
+    "nominalVoltage": 12.0,
+    "unlimited": false
+  },
+  "goalEndState": {
+    "velocity": 0,
+    "rotation": -59.99999999999999
+  },
+  "reversed": false,
+  "folder": "Auto Traverses",
+  "idealStartingState": {
+    "velocity": 0,
+    "rotation": -59.99999999999999
+  },
+  "useDefaultConstraints": false
+}
