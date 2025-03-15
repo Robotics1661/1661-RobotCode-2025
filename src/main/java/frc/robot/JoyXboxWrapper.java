@@ -226,7 +226,7 @@ public class JoyXboxWrapper {
     ;
     public final BooleanButton
         SYSID_SAFETY = BooleanButton.never,
-        SET_POSE_FROM_LIMELIGHT = BooleanButton.never//getXBoxPOV(p -> p.down)
+        SET_POSE_FROM_LIMELIGHT = getXBoxPOV(p -> p.right)
     ;
 
     public final BooleanButton

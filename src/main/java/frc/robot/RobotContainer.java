@@ -50,6 +50,7 @@ import frc.robot.commands.util.EmptyDefaultCommand;
 import frc.robot.generated.TunerConstants;
 import frc.robot.subsystems.ClimberSubsystem;
 import frc.robot.subsystems.CommandSwerveDrivetrain;
+import frc.robot.subsystems.CommandSwerveDrivetrain.PathfindingOptions;
 import frc.robot.subsystems.ElevatorSubsystem;
 import frc.robot.subsystems.IntakeSubsystem;
 import frc.robot.subsystems.WristSubsystem;
@@ -163,20 +164,27 @@ public class RobotContainer {
       .and(m_combined_controller.DRIVE_TO_PRESET.getTrigger())
       .onTrue(m_drivetrain.pathfindToNearestIntakeAndPose().until(presetOverrideWithDrive));
 
+      final PathfindingOptions pathfindingOptions = new PathfindingOptions()
+        .withRunPathfindParallel(false)
+        .withMaxAccelerationMPSSq(1.75);
+
       final var reefLeft = m_drivetrain.curryPathfindToNearestReef(
         ReefAlignment.LEFT,
-        Units.Inches.of(8),
-        Units.Inches.of(0.0)
+        Units.Inches.of(12.0),
+        Units.Inches.of(0.0),
+        pathfindingOptions
       );
       final var reefCenter = m_drivetrain.curryPathfindToNearestReef(
         ReefAlignment.CENTER,
         Units.Inches.of(8),
-        Units.Inches.of(0.0)
+        Units.Inches.of(0.0),
+        pathfindingOptions
       );
       final var reefRight = m_drivetrain.curryPathfindToNearestReef(
         ReefAlignment.RIGHT,
-        Units.Inches.of(8),
-        Units.Inches.of(0.0)
+        Units.Inches.of(12.0),
+        Units.Inches.of(0.0),
+        pathfindingOptions
       );
 
       registerPreset(m_combined_controller.PRESET_REEF_L1, ElevatorSetPoint.L1, WristSetPoint.L1, reefCenter);
