@@ -92,6 +92,11 @@ public class WristSubsystem extends CustomSubsystemBase {
 
         ntPutString("Control", "StaticBrake");
         ntPutNumber("smart move limit", 1.0);
+
+        {
+            m_wrist.m_wrapped.setPosition(m_encoder.getAbsolutePosition().getValue());
+            m_copy_pos_timer = null;
+        }
     }
 
     @SuppressWarnings("unused")
@@ -123,10 +128,10 @@ public class WristSubsystem extends CustomSubsystemBase {
 
     @Override
     public void periodic() {
-        if (m_copy_pos_timer != null && m_copy_pos_timer.hasElapsed(0.25)) {
+        /*if (m_copy_pos_timer != null && m_copy_pos_timer.hasElapsed(0.25)) {
             m_wrist.m_wrapped.setPosition(m_encoder.getAbsolutePosition().getValue());
             m_copy_pos_timer = null;
-        }
+        }*/
 
         m_wrist.periodic();
     }
