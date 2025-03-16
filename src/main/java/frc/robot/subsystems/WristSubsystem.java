@@ -291,18 +291,20 @@ public class WristSubsystem extends CustomSubsystemBase {
     // Limits
 
     protected boolean wristForwardStop() {
-        double encoderPos = Math.max(
+        /*double encoderPos = Math.max(
             m_encoder.getAbsolutePosition().getValue().baseUnitMagnitude(),
             m_wrist.m_wrapped.getPosition().getValue().baseUnitMagnitude()
-        );
+        );*/
+        double encoderPos = m_wrist.m_wrapped.getPosition().getValue().baseUnitMagnitude();
         return encoderPos >= Constants.MANIPULATOR_WRIST_MAX.baseUnitMagnitude();
     }
 
     protected boolean wristBackwardStop() {
-        double encoderPos = Math.min(
+        /*double encoderPos = Math.min(
             m_encoder.getAbsolutePosition().getValue().baseUnitMagnitude(),
             m_wrist.m_wrapped.getPosition().getValue().baseUnitMagnitude()
-        );
+        );*/
+        double encoderPos = m_wrist.m_wrapped.getPosition().getValue().baseUnitMagnitude();
         return encoderPos <= Constants.MANIPULATOR_WRIST_MIN.baseUnitMagnitude();
     }
 
