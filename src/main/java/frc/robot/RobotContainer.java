@@ -217,6 +217,7 @@ public class RobotContainer {
     // triggers
     {
       registerPreset("Raise to Base", ElevatorSetPoint.BASE, WristSetPoint.BASE);
+      registerPreset("Raise to Base Up", ElevatorSetPoint.BASE, WristSetPoint.INTAKE);
       registerPreset("Raise to Intake", ElevatorSetPoint.INTAKE, WristSetPoint.INTAKE);
 
       registerPreset("Raise to L1", ElevatorSetPoint.L1, WristSetPoint.L1);

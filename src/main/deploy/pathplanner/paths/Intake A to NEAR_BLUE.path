@@ -33,7 +33,7 @@
   "pointTowardsZones": [],
   "eventMarkers": [
     {
-      "name": "Raise to Base",
+      "name": "Raise to Base Up",
       "waypointRelativePos": 0,
       "endWaypointRelativePos": null,
       "command": null
