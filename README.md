@@ -24,7 +24,7 @@
 
 Java robot code for the 2025 season (REEFSCAPE) from [Griffitrons 1661](https://team1661.com), the FIRST Robotics Competition team at The Buckley School.
 
-## ✨ Features
+## Features
 
 - **Swerve drivetrain** on CTRE Phoenix 6 using Tuner X generated constants (`CommandSwerveDrivetrain`)
 - **Elevator, wrist, intake and climber** subsystems, with manual, move-to and calibration commands
@@ -34,7 +34,7 @@ Java robot code for the 2025 season (REEFSCAPE) from [Griffitrons 1661](https://
 - SysId characterization commands and an autonomous debugger for testing and tuning
 - Drivetrain telemetry (`Telemetry.java`)
 
-## 🗂️ Layout
+## Layout
 
 ```
 src/main/java/frc/robot/
@@ -47,7 +47,7 @@ src/main/java/frc/robot/
 
 Vendor libraries: Phoenix 6, PathPlanner and REVLib (see `vendordeps/`).
 
-## 🛠️ Building and running
+## Building and running
 
 You'll need [WPILib 2025](https://docs.wpilib.org/) (it bundles the JDK and Gradle). Then, from the repo root:
 
@@ -60,9 +60,9 @@ You'll need [WPILib 2025](https://docs.wpilib.org/) (it bundles the JDK and Grad
 On Windows use `gradlew.bat` instead of `./gradlew`. The team number (1661) lives in
 `.wpilib/wpilib_preferences.json`.
 
-## 📜 License
+## License
 
-Team-written code is released under the [MIT License](LICENSE). Files generated from the WPILib
+Team-written code is released under the [EUPL 1.2 License](LICENSE). Files generated from the WPILib
 project template keep their original headers, and WPILib itself is covered by the BSD-style license in
 [WPILib-License.md](WPILib-License.md). Vendor libraries in `vendordeps/` are covered by their own licenses.
 
@@ -70,7 +70,7 @@ project template keep their original headers, and WPILib itself is covered by th
 
 <div align="center">
 
-<sub>Built by students of <a href="https://team1661.com">Griffitrons 1661</a> at The Buckley School 🛠️</sub>
+<sub>Built by <a href="https://github.com/techno-sam">Sam</a> and other students of <a href="https://team1661.com">Griffitrons 1661</a> at The Buckley School</sub>
 
 <img src="https://capsule-render.vercel.app/api?type=waving&height=90&color=0:aa0000,50:d40000,100:ff1a1a&section=footer" alt="" width="100%" />
 
